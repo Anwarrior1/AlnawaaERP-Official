@@ -1,0 +1,875 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AlnawaaERP Official</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <section class="login-screen" id="loginScreen">
+      <div class="login-card">
+        <div class="brand-row">
+          <div class="brand-mark"><img src="assets/alnawaa-mark.png" alt=""></div>
+          <div>
+            <h1>AlnawaaERP</h1>
+            <p>alnawaa medical group ERP</p>
+          </div>
+        </div>
+        <form id="loginForm" class="login-form">
+          <label>
+            Email
+            <input id="loginEmail" type="email" autocomplete="username" required>
+          </label>
+          <label>
+            Password
+            <input id="loginPassword" type="password" autocomplete="current-password" required>
+          </label>
+          <button class="button primary" type="submit">Sign in</button>
+          <p class="login-error" id="loginError"></p>
+        </form>
+      </div>
+    </section>
+
+    <div class="app-shell hidden" id="appShell">
+      <aside class="sidebar" aria-label="Main navigation">
+        <div class="brand-row">
+          <div class="brand-mark"><img src="assets/alnawaa-mark.png" alt=""></div>
+          <div>
+            <h1>AlnawaaERP</h1>
+            <p>alnawaa medical group</p>
+          </div>
+        </div>
+
+        <nav class="nav-list">
+          <button class="nav-item active" type="button" data-view="dashboard">Dashboard</button>
+          <button class="nav-item" type="button" data-view="inventory">Inventory</button>
+          <button class="nav-item" type="button" data-view="sales">Sales</button>
+          <button class="nav-item" type="button" data-view="invoices">Invoices</button>
+          <button class="nav-item" type="button" data-view="purchases">Purchases</button>
+          <button class="nav-item" type="button" data-view="suppliers">Suppliers</button>
+          <button class="nav-item" type="button" data-view="customers">Customers</button>
+          <button class="nav-item" type="button" data-view="users">Users</button>
+          <button class="nav-item" type="button" data-view="reports">Reports</button>
+          <button class="nav-item" type="button" data-view="accounting">Accounting</button>
+          <button class="nav-item" type="button" data-view="expenses">Expenses</button>
+          <button class="nav-item" type="button" data-view="payroll">Payroll</button>
+          <button class="nav-item" type="button" data-view="banking">Banking</button>
+          <button class="nav-item" type="button" data-view="settings">Settings</button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <span class="status-dot"></span>
+          <span>Server-backed data</span>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">alnawaa medical group</p>
+            <h2 id="viewTitle">Dashboard</h2>
+          </div>
+          <div class="topbar-actions">
+            <label class="search-field">
+              <span>Search</span>
+              <input id="globalSearch" type="search" placeholder="Medicine, batch, customer, invoice">
+            </label>
+            <button class="button ghost" id="exportData" type="button">Export</button>
+            <button class="button ghost" id="languageToggle" type="button">العربية</button>
+            <button class="button ghost" id="themeToggle" type="button">Light mode</button>
+            <div class="user-chip">
+              <strong id="currentUserName">User</strong>
+              <span id="currentUserRole">Role</span>
+            </div>
+            <button class="button ghost" id="logoutButton" type="button">Logout</button>
+          </div>
+        </header>
+
+        <section class="alert-strip" id="alertStrip" aria-live="polite"></section>
+
+        <section class="view active" id="dashboardView">
+          <div class="metric-grid" id="metricGrid"></div>
+          <div class="dashboard-grid">
+            <section class="panel">
+              <div class="panel-header">
+                <h3>Stock Alerts</h3>
+                <button class="button text" type="button" data-view-link="inventory">Open inventory</button>
+              </div>
+              <div class="table-wrap compact">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Medicine</th>
+                      <th>Batch</th>
+                      <th>Stock</th>
+                      <th>Expiry</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboardAlerts"></tbody>
+                </table>
+              </div>
+            </section>
+            <section class="panel">
+              <div class="panel-header">
+                <h3>Recent Sales</h3>
+                <button class="button text" type="button" data-view-link="sales">New sale</button>
+              </div>
+              <div class="activity-list" id="recentSales"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="inventoryView">
+          <div class="split-layout">
+            <section class="panel form-panel">
+              <div class="panel-header">
+                <h3 id="medicineFormTitle">Add Medicine</h3>
+                <button class="button text hidden" id="cancelMedicineEdit" type="button">Cancel edit</button>
+              </div>
+              <form id="medicineForm" class="form-grid">
+                <input id="medicineId" type="hidden">
+                <label>Medicine name<input id="medicineName" required placeholder="Medicine name"></label>
+                <label>SKU / barcode<input id="medicineSku" required placeholder="MED-001"></label>
+                <label>
+                  Category
+                  <select id="medicineCategory" required>
+                    <option>Analgesic</option>
+                    <option>Antibiotic</option>
+                    <option>Antihistamine</option>
+                    <option>Cardiology</option>
+                    <option>Diabetes</option>
+                    <option>Vitamins</option>
+                </select>
+                </label>
+                <label>Batch number<input id="medicineBatch" required placeholder="B-2026-01"></label>
+                <label>Production date<input id="medicineProduction" type="date"></label>
+                <label>Supplier<select id="medicineSupplier" required></select></label>
+                <label>Shelf / location<input id="medicineLocation" placeholder="Aisle 2 - Shelf B"></label>
+                <label>Stock quantity<input id="medicineStock" type="number" min="0" step="1" required></label>
+                <label>Reorder level<input id="medicineReorder" type="number" min="0" step="1" required></label>
+                <label>Cost price<input id="medicineCost" type="number" min="0" step="0.001" required></label>
+                <label>Selling price<input id="medicinePrice" type="number" min="0" step="0.001" required></label>
+                <label>Expiry date<input id="medicineExpiry" type="date" required></label>
+                <button class="button primary full-span" type="submit">Save medicine</button>
+              </form>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
+                <h3>Medicine Inventory</h3>
+                <div class="segmented" role="group" aria-label="Inventory filters">
+                  <button class="segment active" type="button" data-inventory-filter="all">All</button>
+                  <button class="segment" type="button" data-inventory-filter="low">Low stock</button>
+                  <button class="segment" type="button" data-inventory-filter="expiry">Expiring</button>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Medicine</th>
+                      <th>Batch</th>
+                      <th>Supplier</th>
+                      <th>Stock</th>
+                      <th>Price</th>
+                      <th>Expiry</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="inventoryTable"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="salesView">
+          <div class="split-layout">
+            <section class="panel form-panel">
+              <div class="panel-header">
+                <h3>New Sale</h3>
+                <span class="subtle">Creates invoice and reduces stock</span>
+              </div>
+              <form id="saleForm" class="form-grid">
+                <label class="full-span scanner-field">Scan barcode / SKU<input id="saleBarcode" autocomplete="off" placeholder="Scan medicine barcode here"></label>
+                <label>Customer<select id="saleCustomer" required></select></label>
+                <label>Medicine batch<select id="saleMedicine" required></select></label>
+                <label>Quantity<input id="saleQuantity" type="number" min="1" step="1" value="1" required></label>
+                <label>Unit price<input id="salePrice" type="number" min="0" step="0.001" required></label>
+                <label>
+                  Delivery status
+                  <select id="saleDeliveryStatus">
+                    <option>Ready</option>
+                    <option>Delivered</option>
+                    <option>Scheduled</option>
+                  </select>
+                </label>
+                <label>Initial payment<input id="saleInitialPayment" type="number" min="0" step="0.001" value="0"></label>
+                <label>
+                  Payment method
+                  <select id="salePaymentMethod">
+                    <option>Cash</option>
+                    <option>Bank Transfer</option>
+                    <option>Cheque</option>
+                    <option>Other</option>
+                  </select>
+                </label>
+                <label>Deposit to<select id="salePaymentAccount"></select></label>
+                <label class="checkbox-field"><input id="saleExpiredOverride" type="checkbox"> Admin override for expired batch</label>
+                <label class="full-span">Notes<input id="saleNotes" placeholder="Optional invoice note"></label>
+                <button class="button primary full-span" type="submit">Create invoice</button>
+              </form>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
+                <h3>Sales Register</h3>
+                <span class="subtle" id="salesTotalLabel"></span>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Invoice</th>
+                      <th>Customer</th>
+                      <th>Items</th>
+                      <th>Total</th>
+                      <th>Payment</th>
+                      <th>Delivery</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="salesTable"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="invoicesView">
+          <section class="panel">
+            <div class="panel-header">
+              <h3>Invoices</h3>
+              <span class="subtle">Preview, print, and update payment status</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Invoice</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Total</th>
+                    <th>Payment</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="invoiceTable"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="purchasesView">
+          <div class="split-layout">
+            <section class="panel form-panel">
+              <div class="panel-header">
+                <h3>Record Purchase</h3>
+                <span class="subtle">Adds received quantity to stock</span>
+              </div>
+              <form id="purchaseForm" class="form-grid">
+                <label class="full-span scanner-field">Scan barcode / SKU<input id="purchaseBarcode" autocomplete="off" placeholder="Scan received medicine barcode here"></label>
+                <label>Supplier<select id="purchaseSupplier" required></select></label>
+                <label>Medicine<select id="purchaseMedicine" required></select></label>
+                <label>Quantity received<input id="purchaseQuantity" type="number" min="1" step="1" required></label>
+                <label>Unit cost<input id="purchaseCost" type="number" min="0" step="0.001" required></label>
+                <label>Purchase date<input id="purchaseDate" type="date" required></label>
+                <label>Paid amount<input id="purchasePaidAmount" type="number" min="0" step="0.001" value="0"></label>
+                <label>
+                  Payment method
+                  <select id="purchasePaymentMethod">
+                    <option>Cash</option>
+                    <option>Bank Transfer</option>
+                    <option>Cheque</option>
+                    <option>Other</option>
+                  </select>
+                </label>
+                <label>Paid from<select id="purchasePaymentAccount"></select></label>
+                <button class="button primary full-span" type="submit">Save purchase</button>
+              </form>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
+                <h3>Purchase History</h3>
+                <span class="subtle" id="purchaseTotalLabel"></span>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Supplier</th>
+                      <th>Medicine</th>
+                      <th>Qty</th>
+                      <th>Total cost</th>
+                      <th>Paid / due</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="purchaseTable"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="suppliersView">
+          <div class="split-layout">
+            <section class="panel form-panel">
+              <div class="panel-header"><h3>Add Supplier</h3></div>
+              <form id="supplierForm" class="form-grid">
+                <label>Supplier name<input id="supplierName" required placeholder="Alshifa Medical Supply"></label>
+                <label>Phone<input id="supplierPhone" required placeholder="+218..."></label>
+                <label>Email<input id="supplierEmail" type="email" placeholder="supply@example.com"></label>
+                <label>Address<input id="supplierAddress" placeholder="Tripoli"></label>
+                <button class="button primary full-span" type="submit">Save supplier</button>
+              </form>
+            </section>
+            <section class="panel">
+              <div class="panel-header"><h3>Suppliers</h3></div>
+              <div class="entity-grid" id="supplierCards"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="customersView">
+          <div class="split-layout">
+            <section class="panel form-panel">
+              <div class="panel-header"><h3>Add Customer</h3></div>
+              <form id="customerForm" class="form-grid">
+                <label>Customer / pharmacy<input id="customerName" required placeholder="Customer or pharmacy name"></label>
+                <label>Phone<input id="customerPhone" required placeholder="+218..."></label>
+                <label>Email<input id="customerEmail" type="email" placeholder="customer@example.com"></label>
+                <label>Address<input id="customerAddress" placeholder="Benghazi"></label>
+                <button class="button primary full-span" type="submit">Save customer</button>
+              </form>
+            </section>
+            <section class="panel">
+              <div class="panel-header"><h3>Customers</h3></div>
+              <div class="entity-grid" id="customerCards"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="usersView">
+          <div class="split-layout">
+            <section class="panel form-panel">
+              <div class="panel-header">
+                <h3>Add User</h3>
+                <span class="subtle">Admin only</span>
+              </div>
+              <form id="userForm" class="form-grid">
+                <label>Full name<input id="userName" required placeholder="Full name"></label>
+                <label>
+                  Role
+                  <select id="userRole">
+                    <option>Admin</option>
+                    <option>Manager</option>
+                    <option>Pharmacist</option>
+                    <option>Sales</option>
+                    <option>Accountant</option>
+                  </select>
+                </label>
+                <label>Email<input id="userEmail" type="email" required placeholder="user@alnawaaerp.com"></label>
+                <label>Temporary password<input id="userPassword" type="password" required placeholder="At least 8 characters"></label>
+                <label>
+                  Status
+                  <select id="userStatus">
+                    <option>Active</option>
+                    <option>Suspended</option>
+                  </select>
+                </label>
+                <button class="button primary full-span" type="submit">Save user</button>
+              </form>
+            </section>
+            <section class="panel">
+              <div class="panel-header"><h3>User Roles</h3></div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Role</th>
+                      <th>Email</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="userTable"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="reportsView">
+          <section class="panel report-filters">
+            <div class="panel-header">
+              <h3>Report Filters</h3>
+              <div class="button-row">
+                <button class="button ghost" id="printReport" type="button">Print view</button>
+                <button class="button ghost" id="exportReportCsv" type="button">Export CSV</button>
+              </div>
+            </div>
+            <div class="form-grid">
+              <label>From date<input id="reportDateFrom" type="date"></label>
+              <label>To date<input id="reportDateTo" type="date"></label>
+              <label>Customer<select id="reportCustomer"></select></label>
+              <label>Supplier<select id="reportSupplier"></select></label>
+            </div>
+          </section>
+          <div class="report-grid">
+            <section class="panel">
+              <div class="panel-header"><h3>Financial Summary</h3></div>
+              <div class="report-cards" id="financialReport"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-header"><h3>Sales by Medicine</h3></div>
+              <div class="bar-list" id="salesBars"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-header"><h3>Expiry Risk</h3></div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Medicine</th>
+                      <th>Batch</th>
+                      <th>Days left</th>
+                      <th>Stock value</th>
+                    </tr>
+                  </thead>
+                  <tbody id="expiryReport"></tbody>
+                </table>
+              </div>
+            </section>
+            <section class="panel">
+              <div class="panel-header"><h3>Reorder Plan</h3></div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Medicine</th>
+                      <th>Current</th>
+                      <th>Reorder at</th>
+                      <th>Suggested order</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reorderReport"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="accountingView">
+          <div class="report-grid">
+            <section class="panel">
+              <div class="panel-header"><h3>Accounting Summary</h3></div>
+              <div class="report-cards" id="accountingSummary"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-header"><h3>Customer Balances</h3></div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Customer</th>
+                      <th>Total invoices</th>
+                      <th>Total paid</th>
+                      <th>Balance</th>
+                      <th>Unpaid</th>
+                      <th>Partial</th>
+                    </tr>
+                  </thead>
+                  <tbody id="customerBalanceTable"></tbody>
+                </table>
+              </div>
+            </section>
+            <section class="panel">
+              <div class="panel-header"><h3>Supplier Balances</h3></div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Supplier</th>
+                      <th>Total purchases</th>
+                      <th>Total paid</th>
+                      <th>Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody id="supplierBalanceTable"></tbody>
+                </table>
+              </div>
+            </section>
+            <section class="panel">
+              <div class="panel-header"><h3>Recent Account Transactions</h3></div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Account</th>
+                      <th>Description</th>
+                      <th>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody id="transactionTable"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="expensesView">
+          <div class="split-layout">
+            <section class="panel form-panel">
+              <div class="panel-header"><h3>New Expense</h3></div>
+              <form id="expenseForm" class="form-grid">
+                <label>Date<input id="expenseDate" type="date" required></label>
+                <label>Category<select id="expenseCategory" required></select></label>
+                <label>Amount<input id="expenseAmount" type="number" min="0" step="0.001" required></label>
+                <label>
+                  Payment method
+                  <select id="expenseMethod">
+                    <option>Cash</option>
+                    <option>Bank Transfer</option>
+                    <option>Cheque</option>
+                    <option>Other</option>
+                  </select>
+                </label>
+                <label>Paid from<select id="expenseAccount"></select></label>
+                <label class="full-span">Notes<input id="expenseNotes" placeholder="Expense notes"></label>
+                <button class="button primary full-span" type="submit">Save expense</button>
+              </form>
+            </section>
+            <section class="panel">
+              <div class="panel-header"><h3>Expense History</h3></div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Category</th>
+                      <th>Amount</th>
+                      <th>Paid from</th>
+                      <th>Notes</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="expenseTable"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="payrollView">
+          <div class="split-layout">
+            <section class="panel form-panel">
+              <div class="panel-header"><h3>Salary Payment</h3></div>
+              <form id="salaryForm" class="form-grid">
+                <label>Employee name<input id="salaryEmployee" required placeholder="Employee name"></label>
+                <label>Month<input id="salaryMonth" type="month" required></label>
+                <label>Base salary<input id="salaryBase" type="number" min="0" step="0.001" required></label>
+                <label>Deductions<input id="salaryDeductions" type="number" min="0" step="0.001" value="0"></label>
+                <label>Bonuses<input id="salaryBonuses" type="number" min="0" step="0.001" value="0"></label>
+                <label>Advances<input id="salaryAdvances" type="number" min="0" step="0.001" value="0"></label>
+                <label>Net paid amount<input id="salaryNet" type="number" min="0" step="0.001"></label>
+                <label>Paid from<select id="salaryAccount"></select></label>
+                <label class="full-span">Notes<input id="salaryNotes" placeholder="Salary notes"></label>
+                <button class="button primary full-span" type="submit">Save salary</button>
+              </form>
+            </section>
+            <section class="panel">
+              <div class="panel-header"><h3>Salary History</h3></div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Employee</th>
+                      <th>Month</th>
+                      <th>Net paid</th>
+                      <th>Paid from</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="salaryTable"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="bankingView">
+          <div class="settings-layout">
+            <section class="panel">
+              <div class="panel-header"><h3>Accounts</h3></div>
+              <div class="entity-grid" id="bankAccountCards"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-header"><h3>Internal Transfer</h3></div>
+              <form id="transferForm" class="form-grid">
+                <label>From<select id="transferFrom"></select></label>
+                <label>To<select id="transferTo"></select></label>
+                <label>Amount<input id="transferAmount" type="number" min="0" step="0.001" required></label>
+                <label>Date<input id="transferDate" type="date" required></label>
+                <label class="full-span">Notes<input id="transferNotes" placeholder="Transfer notes"></label>
+                <button class="button primary full-span" type="submit">Save transfer</button>
+              </form>
+            </section>
+            <section class="panel">
+              <div class="panel-header"><h3>Withdrawal</h3></div>
+              <form id="withdrawalForm" class="form-grid">
+                <label>Date<input id="withdrawalDate" type="date" required></label>
+                <label>
+                  Type
+                  <select id="withdrawalType">
+                    <option>Owner withdrawals</option>
+                    <option>Employee advances</option>
+                    <option>Cash withdrawals</option>
+                    <option>Bank withdrawals</option>
+                    <option>Other withdrawals</option>
+                  </select>
+                </label>
+                <label>Amount<input id="withdrawalAmount" type="number" min="0" step="0.001" required></label>
+                <label>Withdrawn by<input id="withdrawalBy" placeholder="Name"></label>
+                <label>Withdrawn from<select id="withdrawalAccount"></select></label>
+                <label>Reason<input id="withdrawalReason" placeholder="Reason"></label>
+                <label class="full-span">Notes<input id="withdrawalNotes" placeholder="Withdrawal notes"></label>
+                <button class="button primary full-span" type="submit">Save withdrawal</button>
+              </form>
+            </section>
+            <section class="panel">
+              <div class="panel-header"><h3>Add Account</h3></div>
+              <form id="bankAccountForm" class="form-grid">
+                <label>Account name<input id="bankAccountName" required placeholder="Bank account name"></label>
+                <label>
+                  Type
+                  <select id="bankAccountType">
+                    <option>Bank</option>
+                    <option>Cashbox</option>
+                  </select>
+                </label>
+                <label>Opening balance<input id="bankOpeningBalance" type="number" min="0" step="0.001" value="0"></label>
+                <button class="button primary full-span" type="submit">Add account</button>
+              </form>
+            </section>
+            <section class="panel">
+              <div class="panel-header"><h3>Withdrawal History</h3></div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th>Amount</th>
+                      <th>Account</th>
+                      <th>Reason</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="withdrawalTable"></tbody>
+                </table>
+              </div>
+            </section>
+            <section class="panel">
+              <div class="panel-header"><h3>Transfer History</h3></div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Transfer</th>
+                      <th>From</th>
+                      <th>To</th>
+                      <th>Amount</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="transferTable"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="settingsView">
+          <div class="settings-layout">
+            <section class="panel form-panel">
+              <div class="panel-header">
+                <h3>My Account</h3>
+                <span class="subtle">Email and password</span>
+              </div>
+              <form id="accountForm" class="form-grid">
+                <label>Email<input id="accountEmail" type="email" required placeholder="your@email.com"></label>
+                <label>Current password<input id="accountCurrentPassword" type="password" required placeholder="Current password"></label>
+                <label>New password<input id="accountNewPassword" type="password" placeholder="Leave blank to keep current"></label>
+                <label>Confirm new password<input id="accountConfirmPassword" type="password" placeholder="Repeat new password"></label>
+                <button class="button primary full-span" type="submit">Save account changes</button>
+              </form>
+            </section>
+            <section class="panel">
+              <div class="panel-header">
+                <h3>Modules</h3>
+                <span class="subtle">Admin controls</span>
+              </div>
+              <div class="module-grid" id="moduleGrid"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-header">
+                <h3>Feature Visibility</h3>
+                <span class="subtle">Hide ERP sections by role</span>
+              </div>
+              <div class="feature-visibility-grid" id="featureVisibilityGrid"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-header">
+                <h3>Audit & Data</h3>
+                <span class="subtle">Server database</span>
+              </div>
+              <div class="settings-actions">
+                <div class="button-row">
+                  <button class="button primary" id="downloadBackup" type="button">Download backup</button>
+                  <button class="button danger" id="resetDemo" type="button">Reset empty system</button>
+                </div>
+                <div class="audit-list" id="auditLog"></div>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="invoiceDialog">
+      <div class="dialog-header">
+        <h3>Invoice Preview</h3>
+        <button class="icon-button" id="closeInvoiceDialog" type="button" aria-label="Close invoice preview">x</button>
+      </div>
+      <div id="invoicePreview" class="invoice-preview"></div>
+      <div class="dialog-actions">
+        <button class="button ghost" id="addInvoicePayment" type="button">Add payment</button>
+        <button class="button ghost" id="generateDeliveryReceipt" type="button">Generate Delivery Receipt</button>
+        <button class="button ghost" id="printDeliveryReceipt" type="button">Print Delivery Receipt</button>
+        <button class="button danger" id="deleteDeliveryReceipt" type="button">Delete Delivery Receipt</button>
+        <button class="button ghost" id="downloadCustomerInvoicePdf" type="button">Download Customer PDF</button>
+        <button class="button ghost" id="downloadInternalInvoicePdf" type="button">Download Internal PDF</button>
+        <button class="button ghost" id="markInvoicePaid" type="button">Mark paid</button>
+        <button class="button primary" id="printCustomerInvoice" type="button">Print Customer Invoice</button>
+        <button class="button primary" id="printInternalInvoice" type="button">Print Internal Invoice</button>
+      </div>
+    </dialog>
+
+    <dialog id="paymentDialog">
+      <div class="dialog-header">
+        <h3>Add Payment Receipt</h3>
+        <button class="icon-button" id="closePaymentDialog" type="button" aria-label="Close payment form">x</button>
+      </div>
+      <form id="paymentForm" class="dialog-form form-grid">
+        <label>Amount paid<input id="paymentAmount" type="number" min="0" step="0.001" required></label>
+        <label>Date<input id="paymentDate" type="date" required></label>
+        <label>
+          Method
+          <select id="paymentMethod">
+            <option>Cash</option>
+            <option>Bank Transfer</option>
+            <option>Cheque</option>
+            <option>Other</option>
+          </select>
+        </label>
+        <label>Bank/cashbox<select id="paymentAccount"></select></label>
+        <label class="full-span">Notes<input id="paymentNotes" placeholder="Payment notes"></label>
+        <button class="button primary full-span" type="submit">Save payment receipt</button>
+      </form>
+    </dialog>
+
+    <dialog id="supplierPaymentDialog">
+      <div class="dialog-header">
+        <h3>Add Supplier Payment</h3>
+        <button class="icon-button" id="closeSupplierPaymentDialog" type="button" aria-label="Close supplier payment">x</button>
+      </div>
+      <form id="supplierPaymentForm" class="dialog-form form-grid">
+        <label>Amount paid<input id="supplierPaymentAmount" type="number" min="0" step="0.001" required></label>
+        <label>Date<input id="supplierPaymentDate" type="date" required></label>
+        <label>
+          Method
+          <select id="supplierPaymentMethod">
+            <option>Cash</option>
+            <option>Bank Transfer</option>
+            <option>Cheque</option>
+            <option>Other</option>
+          </select>
+        </label>
+        <label>Paid from<select id="supplierPaymentAccount"></select></label>
+        <label class="full-span">Notes<input id="supplierPaymentNotes" placeholder="Supplier payment notes"></label>
+        <div class="dialog-actions full-span">
+          <button class="button ghost" type="button" id="cancelSupplierPayment">Cancel</button>
+          <button class="button primary" type="submit">Save payment voucher</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="deliveryDialog">
+      <div class="dialog-header">
+        <h3>Goods Delivery Receipt</h3>
+        <button class="icon-button" id="closeDeliveryDialog" type="button" aria-label="Close delivery form">x</button>
+      </div>
+      <form id="deliveryForm" class="dialog-form form-grid">
+        <label>Delivery date<input id="deliveryDate" type="date" required></label>
+        <label>Customer type<input id="deliveryCustomerType" placeholder="Pharmacy, clinic, hospital"></label>
+        <label>Receiver name<input id="deliveryReceiverName" placeholder="Receiver name"></label>
+        <label>Receiver phone<input id="deliveryReceiverPhone" placeholder="Receiver phone"></label>
+        <label>Delivery person<input id="deliveryPerson" placeholder="Company representative"></label>
+        <label class="full-span">Notes<input id="deliveryNotes" placeholder="Delivery notes"></label>
+        <button class="button primary full-span" type="submit">Generate receipt</button>
+      </form>
+    </dialog>
+
+    <dialog id="documentDialog">
+      <div class="dialog-header">
+        <h3 id="documentTitle">Document</h3>
+        <button class="icon-button" id="closeDocumentDialog" type="button" aria-label="Close document">x</button>
+      </div>
+      <div id="documentPreview" class="invoice-preview"></div>
+      <div class="dialog-actions">
+        <button class="button ghost" id="downloadDocumentPdf" type="button">Download PDF</button>
+        <button class="button primary" id="printDocument" type="button">Print</button>
+      </div>
+    </dialog>
+
+    <dialog id="receiptDialog" class="receipt-dialog">
+      <div class="dialog-header receipt-dialog-header">
+        <h3>Payment Receipt</h3>
+        <button class="icon-button" id="closeReceiptDialog" type="button" aria-label="Close receipt">x</button>
+      </div>
+      <div id="receiptEditor" class="receipt-editor"></div>
+      <div class="dialog-actions receipt-actions">
+        <button class="button ghost" id="saveReceipt" type="button">Save Receipt</button>
+        <button class="button ghost" id="clearReceipt" type="button">Clear Form</button>
+        <button class="button ghost" id="downloadReceiptPdf" type="button">Download PDF</button>
+        <button class="button primary" id="printReceipt" type="button">Print Receipt</button>
+      </div>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <div id="printArea"></div>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>

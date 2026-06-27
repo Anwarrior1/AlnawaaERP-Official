@@ -1,0 +1,216 @@
+{
+  "settings": {
+    "schemaVersion": 2,
+    "companyName": "alnawaa",
+    "companySubtitle": "مجموعة النوى الطبية",
+    "companyDetails": "Tripoli - Ben Ashour Street",
+    "companyPhone": "+218 091 069 3900",
+    "companyPhoneAlt": "+218 092 069 3900",
+    "companyEmail": "INFO@ALNAWAA.COM",
+    "companyAddress": "Tripoli - Ben Ashour Street",
+    "companyAddressArabic": "طرابلس - شارع بن عاشور",
+    "currency": "LYD",
+    "nextInvoice": 1002,
+    "nextDeliveryReceipt": 1001,
+    "nextPaymentReceipt": 1001,
+    "nextSupplierPayment": 1001,
+    "nextExpense": 1001,
+    "nextTransfer": 1001
+  },
+  "modules": {
+    "barcode": true,
+    "payments": true,
+    "delivery": true,
+    "accounting": true
+  },
+  "featureVisibility": {
+    "Admin": [],
+    "Manager": [],
+    "Pharmacist": [
+      "reports"
+    ],
+    "Sales": [],
+    "Accountant": []
+  },
+  "suppliers": [
+    {
+      "id": "sup-ab1c4d54-7a5f-4981-8580-4ee632f524dd",
+      "name": "anhjjh",
+      "type": "Supplier",
+      "phone": "0202929872278",
+      "email": "",
+      "address": "",
+      "createdAt": "2026-06-20T18:55:09.469Z"
+    }
+  ],
+  "customers": [
+    {
+      "id": "cus-83a0c13a-c68d-42d3-ac56-abebfa04c7ff",
+      "name": "anwar",
+      "type": "Customer",
+      "phone": "0927726146",
+      "email": "",
+      "address": "",
+      "createdAt": "2026-06-20T18:55:18.761Z"
+    }
+  ],
+  "medicines": [
+    {
+      "id": "med-7af42734-1897-405f-a4d5-300453daa0a5",
+      "name": "panadol",
+      "sku": "msjs2200",
+      "category": "Analgesic",
+      "batch": "230029",
+      "productionDate": "2026-06-20",
+      "supplierId": "sup-ab1c4d54-7a5f-4981-8580-4ee632f524dd",
+      "location": "2",
+      "stock": 10,
+      "reorderLevel": 12,
+      "cost": 70,
+      "price": 150,
+      "expiry": "2027-06-20",
+      "createdAt": "2026-06-20T18:55:59.079Z"
+    }
+  ],
+  "purchases": [],
+  "sales": [
+    {
+      "id": "sale-84d90c06-e33e-460d-b65e-05747bf83e98",
+      "invoiceNumber": "INV-1001",
+      "date": "2026-06-20",
+      "customerId": "cus-83a0c13a-c68d-42d3-ac56-abebfa04c7ff",
+      "items": [
+        {
+          "medicineId": "med-7af42734-1897-405f-a4d5-300453daa0a5",
+          "name": "panadol",
+          "sku": "msjs2200",
+          "batch": "230029",
+          "productionDate": "2026-06-20",
+          "expiry": "2027-06-20",
+          "quantity": 20,
+          "unitPrice": 150,
+          "unitCost": 70,
+          "lineTotal": 3000
+        }
+      ],
+      "total": 3000,
+      "totalPaid": 0,
+      "remainingBalance": 3000,
+      "paymentStatus": "Unpaid",
+      "deliveryStatus": "Ready",
+      "notes": "",
+      "paymentReceiptIds": [],
+      "deliveryReceiptIds": [],
+      "createdBy": "usr-1",
+      "createdAt": "2026-06-20T18:57:35.796Z"
+    }
+  ],
+  "customerPayments": [],
+  "deliveryReceipts": [],
+  "supplierPayments": [],
+  "expenseCategories": [
+    "Office rent",
+    "Worker housing rent",
+    "Salaries",
+    "Petty cash",
+    "Fuel",
+    "Delivery expenses",
+    "Utilities",
+    "Maintenance",
+    "Other expenses"
+  ],
+  "expenses": [],
+  "salaryPayments": [],
+  "withdrawals": [],
+  "bankAccounts": [
+    {
+      "id": "acct-cashbox",
+      "name": "Main Cashbox",
+      "type": "Cashbox",
+      "openingBalance": 0,
+      "currentBalance": 0,
+      "totalDeposits": 0,
+      "totalWithdrawals": 0,
+      "active": true,
+      "createdAt": "2026-06-19T15:57:30.983Z"
+    },
+    {
+      "id": "acct-al-nouran",
+      "name": "Al Nouran Bank",
+      "type": "Bank",
+      "openingBalance": 0,
+      "currentBalance": 0,
+      "totalDeposits": 0,
+      "totalWithdrawals": 0,
+      "active": true,
+      "createdAt": "2026-06-19T15:57:30.983Z"
+    },
+    {
+      "id": "acct-jumhouria",
+      "name": "Jumhouria Bank",
+      "type": "Bank",
+      "openingBalance": 0,
+      "currentBalance": 0,
+      "totalDeposits": 0,
+      "totalWithdrawals": 0,
+      "active": true,
+      "createdAt": "2026-06-19T15:57:30.983Z"
+    }
+  ],
+  "accountTransactions": [],
+  "internalTransfers": [],
+  "users": [
+    {
+      "id": "usr-1",
+      "name": "Omar Alnawaa",
+      "role": "Admin",
+      "email": "admin@alnawaaerp.com",
+      "status": "Active",
+      "salt": "4914b5ab8c5aaeba474ae8b4c1d60076",
+      "passwordHash": "65c5df03f77de6be870ff14922af4acf9f67393a50a20a58e18f991650e9e317",
+      "createdAt": "2026-06-19T15:57:31.020Z"
+    }
+  ],
+  "auditLogs": [
+    {
+      "id": "log-2f9fa506-9bac-456b-9c21-6591d38ced71",
+      "at": "2026-06-20T18:53:48.024Z",
+      "userId": "usr-1",
+      "userName": "Omar Alnawaa",
+      "action": "feature-visibility:update",
+      "detail": "Pharmacist: reports"
+    },
+    {
+      "id": "log-c71893da-805a-4bf7-9ceb-bcc84e81512b",
+      "at": "2026-06-20T18:55:09.469Z",
+      "userId": "usr-1",
+      "userName": "Omar Alnawaa",
+      "action": "supplier:create",
+      "detail": "anhjjh"
+    },
+    {
+      "id": "log-90b39016-2758-4bee-9c18-2e617c24d2e7",
+      "at": "2026-06-20T18:55:18.761Z",
+      "userId": "usr-1",
+      "userName": "Omar Alnawaa",
+      "action": "customer:create",
+      "detail": "anwar"
+    },
+    {
+      "id": "log-5e294b67-6864-4ef8-b61e-2e1463a45508",
+      "at": "2026-06-20T18:55:59.079Z",
+      "userId": "usr-1",
+      "userName": "Omar Alnawaa",
+      "action": "medicine:create",
+      "detail": "panadol"
+    },
+    {
+      "id": "log-d17158e0-7ca6-4ce7-abc1-456fe3ed731d",
+      "at": "2026-06-20T18:57:35.796Z",
+      "userId": "usr-1",
+      "userName": "Omar Alnawaa",
+      "action": "sale:create",
+      "detail": "INV-1001 anwar"
+    }
+  ]
+}

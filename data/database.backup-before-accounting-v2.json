@@ -1,0 +1,124 @@
+{
+  "settings": {
+    "companyName": "AlnawaaERP",
+    "companySubtitle": "Medicine Sales Company",
+    "currency": "LYD",
+    "nextInvoice": 1002
+  },
+  "modules": {
+    "barcode": true,
+    "payments": true,
+    "delivery": true,
+    "accounting": true
+  },
+  "suppliers": [
+    {
+      "id": "sup-6c863fff-7994-4d63-9be4-c576b2e824ca",
+      "name": "supplemena",
+      "phone": "9284759057907",
+      "email": "",
+      "address": "",
+      "createdAt": "2026-06-18T13:07:12.342Z"
+    }
+  ],
+  "customers": [
+    {
+      "id": "cus-2133ecdf-5106-491f-a748-f4a7b195ea0a",
+      "name": "yashfin",
+      "phone": "0922175551",
+      "email": "",
+      "address": "tajoura",
+      "createdAt": "2026-06-18T13:10:23.467Z"
+    }
+  ],
+  "medicines": [
+    {
+      "id": "med-c466f45c-171a-4034-a21c-e5190de30645",
+      "name": "ovulux",
+      "sku": "med-kos",
+      "category": "Analgesic",
+      "batch": "1266",
+      "supplierId": "sup-6c863fff-7994-4d63-9be4-c576b2e824ca",
+      "location": "null",
+      "stock": 700,
+      "reorderLevel": 200,
+      "cost": 224,
+      "price": 500,
+      "expiry": "2027-07-07",
+      "createdAt": "2026-06-18T13:09:38.609Z"
+    }
+  ],
+  "purchases": [],
+  "sales": [
+    {
+      "id": "sale-4019ff5c-24f4-4cd2-aaf8-a5b6ddeca6b6",
+      "invoiceNumber": "INV-1001",
+      "date": "2026-06-18",
+      "customerId": "cus-2133ecdf-5106-491f-a748-f4a7b195ea0a",
+      "items": [
+        {
+          "medicineId": "med-c466f45c-171a-4034-a21c-e5190de30645",
+          "name": "ovulux",
+          "sku": "med-kos",
+          "batch": "1266",
+          "quantity": 100,
+          "unitPrice": 500,
+          "unitCost": 224,
+          "lineTotal": 50000
+        }
+      ],
+      "total": 50000,
+      "paymentStatus": "Partial",
+      "deliveryStatus": "Scheduled",
+      "notes": "",
+      "createdBy": "usr-1",
+      "createdAt": "2026-06-18T13:11:06.598Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "usr-1",
+      "name": "Omar Alnawaa",
+      "role": "Admin",
+      "email": "admin@alnawaaerp.com",
+      "status": "Active",
+      "salt": "bd81d492a1b8021aadd137c7b0115882",
+      "passwordHash": "84049f5cc5ea11a6e81538c02f1c6ee0571612300985d45f68d3e5ed0810dd65",
+      "createdAt": "2026-06-18T13:05:10.745Z"
+    }
+  ],
+  "auditLogs": [
+    {
+      "id": "log-01dc5f01-699b-471e-9cc9-acccd508f11f",
+      "at": "2026-06-18T13:07:12.343Z",
+      "userId": "usr-1",
+      "userName": "Omar Alnawaa",
+      "action": "supplier:create",
+      "detail": "supplemena"
+    },
+    {
+      "id": "log-c59b62af-98b8-4391-a63d-4fd3c870580b",
+      "at": "2026-06-18T13:09:38.609Z",
+      "userId": "usr-1",
+      "userName": "Omar Alnawaa",
+      "action": "medicine:create",
+      "detail": "ovulux"
+    },
+    {
+      "id": "log-d0cef06b-8fc6-4dcb-81f3-2f4dea38f9d2",
+      "at": "2026-06-18T13:10:23.467Z",
+      "userId": "usr-1",
+      "userName": "Omar Alnawaa",
+      "action": "customer:create",
+      "detail": "yashfin"
+    },
+    {
+      "id": "log-6bef4a11-55c3-49ae-8df1-79ff29f0034d",
+      "at": "2026-06-18T13:11:06.598Z",
+      "userId": "usr-1",
+      "userName": "Omar Alnawaa",
+      "action": "sale:create",
+      "detail": "INV-1001 yashfin"
+    }
+  ]
+}

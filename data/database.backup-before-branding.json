@@ -1,0 +1,134 @@
+{
+  "settings": {
+    "schemaVersion": 2,
+    "companyName": "AlnawaaERP",
+    "companySubtitle": "Medicine Sales Company",
+    "companyDetails": "Tripoli, Libya",
+    "currency": "LYD",
+    "nextInvoice": 1001,
+    "nextDeliveryReceipt": 1001,
+    "nextPaymentReceipt": 1001,
+    "nextSupplierPayment": 1001,
+    "nextExpense": 1002,
+    "nextTransfer": 1001
+  },
+  "modules": {
+    "barcode": true,
+    "payments": true,
+    "delivery": true,
+    "accounting": true
+  },
+  "suppliers": [],
+  "customers": [],
+  "medicines": [],
+  "purchases": [],
+  "sales": [],
+  "customerPayments": [],
+  "deliveryReceipts": [],
+  "supplierPayments": [],
+  "expenseCategories": [
+    "Office rent",
+    "Worker housing rent",
+    "Salaries",
+    "Petty cash",
+    "Fuel",
+    "Delivery expenses",
+    "Utilities",
+    "Maintenance",
+    "Other expenses"
+  ],
+  "expenses": [
+    {
+      "id": "exp-4378ecca-21cd-487a-96e9-ce4a83c04cc3",
+      "expenseNumber": "EXP-1001",
+      "date": "2026-06-18",
+      "category": "Other expenses",
+      "amount": 250,
+      "method": "Cash",
+      "paidFromAccountId": "acct-cashbox",
+      "paidFromAccountName": "Main Cashbox",
+      "notes": "internet",
+      "attachmentName": "",
+      "source": "expense",
+      "createdBy": "usr-1",
+      "createdByName": "Omar Alnawaa",
+      "createdAt": "2026-06-18T14:13:30.518Z",
+      "accountTransactionId": "txn-dcf79e31-d9ec-4cb6-bb36-6fae0ab16128"
+    }
+  ],
+  "salaryPayments": [],
+  "withdrawals": [],
+  "bankAccounts": [
+    {
+      "id": "acct-cashbox",
+      "name": "Main Cashbox",
+      "type": "Cashbox",
+      "openingBalance": 0,
+      "currentBalance": -250,
+      "totalDeposits": 0,
+      "totalWithdrawals": 250,
+      "active": true,
+      "createdAt": "2026-06-18T14:10:25.049Z"
+    },
+    {
+      "id": "acct-al-nouran",
+      "name": "Al Nouran Bank",
+      "type": "Bank",
+      "openingBalance": 0,
+      "currentBalance": 0,
+      "totalDeposits": 0,
+      "totalWithdrawals": 0,
+      "active": true,
+      "createdAt": "2026-06-18T14:10:25.049Z"
+    },
+    {
+      "id": "acct-jumhouria",
+      "name": "Jumhouria Bank",
+      "type": "Bank",
+      "openingBalance": 0,
+      "currentBalance": 0,
+      "totalDeposits": 0,
+      "totalWithdrawals": 0,
+      "active": true,
+      "createdAt": "2026-06-18T14:10:25.049Z"
+    }
+  ],
+  "accountTransactions": [
+    {
+      "id": "txn-dcf79e31-d9ec-4cb6-bb36-6fae0ab16128",
+      "accountId": "acct-cashbox",
+      "accountName": "Main Cashbox",
+      "date": "2026-06-18",
+      "type": "withdrawal",
+      "source": "expense",
+      "sourceId": "exp-4378ecca-21cd-487a-96e9-ce4a83c04cc3",
+      "description": "EXP-1001 Other expenses",
+      "amount": -250,
+      "createdBy": "usr-1",
+      "createdAt": "2026-06-18T14:13:30.518Z"
+    }
+  ],
+  "internalTransfers": [],
+  "users": [
+    {
+      "id": "usr-1",
+      "name": "Omar Alnawaa",
+      "role": "Admin",
+      "email": "admin@alnawaaerp.com",
+      "status": "Active",
+      "salt": "67502c034f9b73c611c00d696c11099a",
+      "passwordHash": "d33f93683cc3153c8326859efb5aca0cbff9e953e0c0b1f2350c77f517d1bbd6",
+      "createdAt": "2026-06-18T14:10:25.086Z"
+    }
+  ],
+  "auditLogs": [
+    {
+      "id": "log-06facc0e-ae44-4829-8f4a-ab482b002f6a",
+      "at": "2026-06-18T14:13:30.518Z",
+      "userId": "usr-1",
+      "userName": "Omar Alnawaa",
+      "action": "expense:create",
+      "detail": "EXP-1001 Other expenses"
+    }
+  ]
+}

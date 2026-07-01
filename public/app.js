@@ -1518,6 +1518,7 @@ async function saveSale(event) {
 
   const payload = {
     customerId: getValue("saleCustomer"),
+    date: getValue("saleDate"),
     items,
     deliveryStatus: getValue("saleDeliveryStatus"),
     allowExpiredOverride: document.getElementById("saleExpiredOverride").checked,
@@ -1965,6 +1966,7 @@ function editSale(id) {
   document.getElementById("cancelSaleEdit").classList.remove("hidden");
   document.querySelectorAll(".sale-payment-field").forEach((field) => field.classList.add("hidden"));
   document.getElementById("saleCustomer").value = sale.customerId;
+  document.getElementById("saleDate").value = sale.date || new Date().toISOString().slice(0, 10);
   document.getElementById("saleDeliveryStatus").value = sale.deliveryStatus || "Ready";
   document.getElementById("saleInitialPayment").value = "0";
   document.getElementById("saleExpiredOverride").checked = false;
@@ -1982,13 +1984,14 @@ function resetSaleForm() {
   document.getElementById("saleSubmitButton").textContent = "Create invoice";
   document.getElementById("cancelSaleEdit").classList.add("hidden");
   document.querySelectorAll(".sale-payment-field").forEach((field) => field.classList.remove("hidden"));
+  document.getElementById("saleDate").value = new Date().toISOString().slice(0, 10);
   saleItemRows = [createSaleItemRow()];
   renderSaleItems();
 }
 
 function setDefaultFormValues() {
   const today = new Date().toISOString().slice(0, 10);
-  ["purchaseDate", "paymentDate", "supplierPaymentDate", "deliveryDate", "expenseDate", "transferDate", "withdrawalDate"].forEach((id) => {
+  ["saleDate", "purchaseDate", "paymentDate", "supplierPaymentDate", "deliveryDate", "expenseDate", "transferDate", "withdrawalDate"].forEach((id) => {
     const input = document.getElementById(id);
     if (input && !input.value) input.value = today;
   });

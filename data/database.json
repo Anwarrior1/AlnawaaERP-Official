@@ -64,7 +64,7 @@
       "productionDate": "2026-06-20",
       "supplierId": "sup-ab1c4d54-7a5f-4981-8580-4ee632f524dd",
       "location": "2",
-      "stock": 10,
+      "stock": 0,
       "reorderLevel": 12,
       "cost": 70,
       "price": 150,
@@ -91,18 +91,32 @@
           "unitPrice": 150,
           "unitCost": 70,
           "lineTotal": 3000
+        },
+        {
+          "medicineId": "med-7af42734-1897-405f-a4d5-300453daa0a5",
+          "name": "panadol",
+          "sku": "msjs2200",
+          "batch": "230029",
+          "productionDate": "2026-06-20",
+          "expiry": "2027-06-20",
+          "quantity": 10,
+          "unitPrice": 150,
+          "unitCost": 70,
+          "lineTotal": 1500
         }
       ],
-      "total": 3000,
+      "total": 4500,
       "totalPaid": 0,
-      "remainingBalance": 3000,
+      "remainingBalance": 4500,
       "paymentStatus": "Unpaid",
       "deliveryStatus": "Ready",
       "notes": "",
       "paymentReceiptIds": [],
       "deliveryReceiptIds": [],
       "createdBy": "usr-1",
-      "createdAt": "2026-06-20T18:57:35.796Z"
+      "createdAt": "2026-06-20T18:57:35.796Z",
+      "updatedBy": "usr-1",
+      "updatedAt": "2026-07-01T14:08:03.291Z"
     }
   ],
   "customerPayments": [],
@@ -210,6 +224,14 @@
       "userId": "usr-1",
       "userName": "Omar Alnawaa",
       "action": "sale:create",
+      "detail": "INV-1001 anwar"
+    },
+    {
+      "id": "log-34ddadc7-4333-4c73-bc3c-40ed0dc3ac3d",
+      "at": "2026-07-01T14:08:03.292Z",
+      "userId": "usr-1",
+      "userName": "Omar Alnawaa",
+      "action": "sale:update",
       "detail": "INV-1001 anwar"
     }
   ]

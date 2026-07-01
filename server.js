@@ -1004,7 +1004,7 @@ function createSale(body, currentUser) {
   const sale = {
     id: newId("sale"),
     invoiceNumber: `INV-${db.settings.nextInvoice++}`,
-    date: dateOnly(),
+    date: normalizeDateOnly(body.date),
     customerId: customer.id,
     items,
     total,
@@ -1058,6 +1058,7 @@ function updateSale(saleId, body, currentUser) {
   deductSaleItemsFromInventory(items);
 
   sale.customerId = customer.id;
+  sale.date = normalizeDateOnly(body.date, sale.date || dateOnly());
   sale.items = items;
   sale.total = total;
   sale.deliveryStatus = ["Ready", "Scheduled", "Delivered"].includes(body.deliveryStatus) ? body.deliveryStatus : sale.deliveryStatus || "Ready";
@@ -1908,6 +1909,16 @@ function roundMoney(value) {
 
 function dateOnly() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function normalizeDateOnly(value, fallback = dateOnly()) {
+  const text = cleanText(value || "");
+  if (!text) return fallback;
+  const parsed = new Date(`${text}T00:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text) || Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== text) {
+    throwError("Invoice date must be a valid YYYY-MM-DD date", 400);
+  }
+  return text;
 }
 
 function daysUntil(dateText) {

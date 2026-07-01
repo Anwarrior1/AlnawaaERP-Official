@@ -190,15 +190,39 @@
           <div class="split-layout">
             <section class="panel form-panel">
               <div class="panel-header">
-                <h3>New Sale</h3>
+                <h3 id="saleFormTitle">New Sale</h3>
                 <span class="subtle">Creates invoice and reduces stock</span>
               </div>
               <form id="saleForm" class="form-grid">
                 <label class="full-span scanner-field">Scan barcode / SKU<input id="saleBarcode" autocomplete="off" placeholder="Scan medicine barcode here"></label>
-                <label>Customer<select id="saleCustomer" required></select></label>
-                <label>Medicine batch<select id="saleMedicine" required></select></label>
-                <label>Quantity<input id="saleQuantity" type="number" min="1" step="1" value="1" required></label>
-                <label>Unit price<input id="salePrice" type="number" min="0" step="0.001" required></label>
+                <label class="full-span">Customer<select id="saleCustomer" required></select></label>
+                <div class="sale-items-editor full-span">
+                  <div class="sale-items-toolbar">
+                    <div>
+                      <strong>Invoice items</strong>
+                      <span class="subtle" id="saleItemsCount"></span>
+                    </div>
+                    <button class="button ghost" id="saleAddItem" type="button">Add Item</button>
+                  </div>
+                  <div class="table-wrap sale-items-wrap">
+                    <table class="sale-items-table">
+                      <thead>
+                        <tr>
+                          <th>Product</th>
+                          <th>Quantity</th>
+                          <th>Unit Price</th>
+                          <th>Line Total</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="saleItemsBody"></tbody>
+                    </table>
+                  </div>
+                  <div class="sale-total-row">
+                    <span>Invoice total</span>
+                    <strong id="saleInvoiceTotal">LYD 0.000</strong>
+                  </div>
+                </div>
                 <label>
                   Delivery status
                   <select id="saleDeliveryStatus">
@@ -207,8 +231,8 @@
                     <option>Scheduled</option>
                   </select>
                 </label>
-                <label>Initial payment<input id="saleInitialPayment" type="number" min="0" step="0.001" value="0"></label>
-                <label>
+                <label class="sale-payment-field">Initial payment<input id="saleInitialPayment" type="number" min="0" step="0.001" value="0"></label>
+                <label class="sale-payment-field">
                   Payment method
                   <select id="salePaymentMethod">
                     <option>Cash</option>
@@ -217,10 +241,13 @@
                     <option>Other</option>
                   </select>
                 </label>
-                <label>Deposit to<select id="salePaymentAccount"></select></label>
+                <label class="sale-payment-field">Deposit to<select id="salePaymentAccount"></select></label>
                 <label class="checkbox-field"><input id="saleExpiredOverride" type="checkbox"> Admin override for expired batch</label>
                 <label class="full-span">Notes<input id="saleNotes" placeholder="Optional invoice note"></label>
-                <button class="button primary full-span" type="submit">Create invoice</button>
+                <div class="button-row full-span">
+                  <button class="button primary" id="saleSubmitButton" type="submit">Create invoice</button>
+                  <button class="button ghost hidden" id="cancelSaleEdit" type="button">Cancel edit</button>
+                </div>
               </form>
             </section>
 
@@ -764,6 +791,7 @@
       </div>
       <div id="invoicePreview" class="invoice-preview"></div>
       <div class="dialog-actions">
+        <button class="button ghost" id="editInvoice" type="button">Edit invoice</button>
         <button class="button ghost" id="addInvoicePayment" type="button">Add payment</button>
         <button class="button ghost" id="generateDeliveryReceipt" type="button">Generate Delivery Receipt</button>
         <button class="button ghost" id="printDeliveryReceipt" type="button">Print Delivery Receipt</button>

@@ -4,6 +4,9 @@ let activeView = "dashboard";
 let inventoryFilter = "all";
 let selectedInvoiceId = null;
 let selectedPurchaseId = null;
+let editingSaleId = null;
+let saleItemRows = [];
+let saleItemSequence = 0;
 let selectedDocumentHtml = "";
 let currentLanguage = localStorage.getItem("alnawaa_language") || "en";
 let currentTheme = localStorage.getItem("alnawaa_theme") || "dark";
@@ -119,6 +122,8 @@ const elements = {
   recentSales: document.getElementById("recentSales"),
   inventoryTable: document.getElementById("inventoryTable"),
   salesTable: document.getElementById("salesTable"),
+  saleItemsBody: document.getElementById("saleItemsBody"),
+  saleInvoiceTotal: document.getElementById("saleInvoiceTotal"),
   invoiceTable: document.getElementById("invoiceTable"),
   purchaseTable: document.getElementById("purchaseTable"),
   supplierCards: document.getElementById("supplierCards"),
@@ -267,6 +272,7 @@ function bindBaseEvents() {
   document.getElementById("printCustomerInvoice").addEventListener("click", () => printSelectedInvoice("customer"));
   document.getElementById("printInternalInvoice").addEventListener("click", () => printSelectedInvoice("internal"));
   document.getElementById("markInvoicePaid").addEventListener("click", markInvoicePaid);
+  document.getElementById("editInvoice").addEventListener("click", () => editSale(selectedInvoiceId));
   document.getElementById("addInvoicePayment").addEventListener("click", openPaymentDialog);
   document.getElementById("generateDeliveryReceipt").addEventListener("click", openDeliveryDialog);
   document.getElementById("printDeliveryReceipt").addEventListener("click", printDeliveryReceipt);
@@ -309,8 +315,12 @@ function bindBaseEvents() {
   document.getElementById("medicineForm").addEventListener("submit", saveMedicine);
   bindBarcodeInput("medicineSku", fillMedicineFormFromBarcode);
   document.getElementById("cancelMedicineEdit").addEventListener("click", resetMedicineForm);
-  document.getElementById("saleForm").addEventListener("submit", createSale);
-  document.getElementById("saleMedicine").addEventListener("change", syncSalePrice);
+  document.getElementById("saleForm").addEventListener("submit", saveSale);
+  document.getElementById("saleAddItem").addEventListener("click", () => addSaleItemRow());
+  document.getElementById("cancelSaleEdit").addEventListener("click", resetSaleForm);
+  elements.saleItemsBody.addEventListener("input", handleSaleItemInput);
+  elements.saleItemsBody.addEventListener("change", handleSaleItemInput);
+  elements.saleItemsBody.addEventListener("click", handleSaleItemClick);
   bindBarcodeInput("saleBarcode", fillSaleFromBarcode);
   document.getElementById("purchaseForm").addEventListener("submit", savePurchase);
   document.getElementById("purchaseMedicine").addEventListener("change", syncPurchaseCost);
@@ -545,11 +555,25 @@ function fillSaleFromBarcode(value, force = false) {
     if (force) toast(`No medicine found for barcode ${String(value || "").trim()}.`);
     return;
   }
+  ensureSaleItemRows();
+  const existingRow = saleItemRows.find((row) => row.medicineId === medicine.id);
+  if (existingRow) {
+    existingRow.quantity = Number(existingRow.quantity || 0) + 1;
+    existingRow.unitPrice = existingRow.unitPrice || medicine.price;
+  } else {
+    const emptyRow = saleItemRows.find((row) => !row.medicineId);
+    if (emptyRow) {
+      emptyRow.medicineId = medicine.id;
+      emptyRow.quantity = 1;
+      emptyRow.unitPrice = medicine.price;
+    } else {
+      saleItemRows.push(createSaleItemRow({ medicineId: medicine.id, quantity: 1, unitPrice: medicine.price }));
+    }
+  }
   document.getElementById("saleBarcode").value = medicine.sku;
-  document.getElementById("saleMedicine").value = medicine.id;
-  document.getElementById("saleQuantity").value = "1";
-  syncSalePrice();
-  document.getElementById("saleQuantity").focus();
+  renderSaleItems();
+  const row = saleItemRows.find((item) => item.medicineId === medicine.id);
+  elements.saleItemsBody.querySelector(`[data-sale-item-row="${row?.rowId}"] [data-sale-field="quantity"]`)?.focus();
   const status = stockStatus(medicine);
   toast(`Scanned ${medicine.name} | batch ${medicine.batch} | ${status.label}.`);
 }
@@ -597,7 +621,6 @@ function hydrateSelects() {
   setSelectOptions("medicineSupplier", supplierOptions);
   setSelectOptions("purchaseSupplier", supplierOptions);
   setSelectOptions("saleCustomer", customerOptions);
-  setSelectOptions("saleMedicine", medicineOptions);
   setSelectOptions("purchaseMedicine", medicineOptions);
   setSelectOptions("salePaymentAccount", accountOptions);
   setSelectOptions("purchasePaymentAccount", accountOptions);
@@ -619,6 +642,142 @@ function setSelectOptions(id, html) {
   const current = select.value;
   select.innerHTML = html;
   if ([...select.options].some((option) => option.value === current)) select.value = current;
+}
+
+function createSaleItemRow(data = {}) {
+  const medicine = findMedicine(data.medicineId);
+  const unitPrice = data.unitPrice ?? medicine?.price ?? 0;
+  return {
+    rowId: data.rowId || `sale-item-${++saleItemSequence}`,
+    medicineId: data.medicineId || "",
+    quantity: data.quantity === undefined || data.quantity === "" ? 1 : Number(data.quantity),
+    unitPrice: unitPrice === "" ? "" : Number(unitPrice || 0),
+  };
+}
+
+function ensureSaleItemRows() {
+  if (!saleItemRows.length) saleItemRows = [createSaleItemRow()];
+}
+
+function addSaleItemRow(data = {}) {
+  saleItemRows.push(createSaleItemRow(data));
+  renderSaleItems();
+  const row = saleItemRows[saleItemRows.length - 1];
+  elements.saleItemsBody.querySelector(`[data-sale-item-row="${row.rowId}"] select`)?.focus();
+}
+
+function renderSaleItems() {
+  if (!state || !elements.saleItemsBody) return;
+  ensureSaleItemRows();
+  elements.saleItemsBody.innerHTML = saleItemRows.map((row) => saleItemRowMarkup(row)).join("");
+  updateSaleTotals();
+}
+
+function saleItemRowMarkup(row) {
+  return `
+    <tr data-sale-item-row="${escapeHtml(row.rowId)}">
+      <td>
+        <select data-sale-field="medicineId" required>
+          ${saleMedicineOptions(row.medicineId)}
+        </select>
+      </td>
+      <td>
+        <input data-sale-field="quantity" type="number" min="1" step="1" value="${escapeHtml(row.quantity || "")}" required>
+      </td>
+      <td>
+        <input data-sale-field="unitPrice" type="number" min="0" step="0.001" value="${escapeHtml(row.unitPrice === "" ? "" : roundMoney(row.unitPrice))}" required>
+      </td>
+      <td><strong data-sale-line-total>${formatMoney(saleItemLineTotal(row))}</strong></td>
+      <td><button class="mini-button danger" type="button" data-remove-sale-item="${escapeHtml(row.rowId)}">Remove</button></td>
+    </tr>
+  `;
+}
+
+function saleMedicineOptions(selectedId = "") {
+  const options = state.medicines.map((medicine) => {
+    const status = stockStatus(medicine);
+    const label = `${medicine.name} | batch ${medicine.batch} | ${medicine.stock} in stock | ${status.label}`;
+    return `<option value="${escapeHtml(medicine.id)}" ${medicine.id === selectedId ? "selected" : ""}>${escapeHtml(label)}</option>`;
+  }).join("");
+  return `<option value="">Select product</option>${options}`;
+}
+
+function handleSaleItemInput(event) {
+  const control = event.target.closest("[data-sale-field]");
+  if (!control) return;
+  const rowElement = control.closest("[data-sale-item-row]");
+  const row = saleItemRows.find((item) => item.rowId === rowElement?.dataset.saleItemRow);
+  if (!row) return;
+
+  const field = control.dataset.saleField;
+  if (field === "medicineId") {
+    row.medicineId = control.value;
+    const medicine = findMedicine(row.medicineId);
+    if (medicine) row.unitPrice = medicine.price;
+    if (!row.quantity) row.quantity = 1;
+    renderSaleItems();
+    elements.saleItemsBody.querySelector(`[data-sale-item-row="${row.rowId}"] [data-sale-field="quantity"]`)?.focus();
+    return;
+  }
+
+  row[field] = control.value === "" ? "" : Number(control.value);
+  updateSaleTotals();
+}
+
+function handleSaleItemClick(event) {
+  const button = event.target.closest("[data-remove-sale-item]");
+  if (!button) return;
+  removeSaleItemRow(button.dataset.removeSaleItem);
+}
+
+function removeSaleItemRow(rowId) {
+  if (saleItemRows.length <= 1) {
+    saleItemRows = [createSaleItemRow()];
+  } else {
+    saleItemRows = saleItemRows.filter((row) => row.rowId !== rowId);
+  }
+  renderSaleItems();
+}
+
+function updateSaleTotals() {
+  let total = 0;
+  for (const row of saleItemRows) {
+    const lineTotal = saleItemLineTotal(row);
+    total += lineTotal;
+    elements.saleItemsBody
+      .querySelector(`[data-sale-item-row="${row.rowId}"] [data-sale-line-total]`)
+      ?.replaceChildren(document.createTextNode(formatMoney(lineTotal)));
+  }
+  const populatedRows = saleItemRows.filter((row) => row.medicineId).length;
+  document.getElementById("saleItemsCount").textContent = populatedRows === 1 ? "1 item" : `${populatedRows} items`;
+  elements.saleInvoiceTotal.textContent = formatMoney(total);
+}
+
+function saleItemLineTotal(row) {
+  return roundMoney(Number(row.quantity || 0) * Number(row.unitPrice || 0));
+}
+
+function syncSaleItemRowsFromDom() {
+  saleItemRows = [...elements.saleItemsBody.querySelectorAll("[data-sale-item-row]")].map((rowElement) => {
+    const row = saleItemRows.find((item) => item.rowId === rowElement.dataset.saleItemRow) || createSaleItemRow();
+    return {
+      rowId: row.rowId,
+      medicineId: rowElement.querySelector("[data-sale-field='medicineId']").value,
+      quantity: Number(rowElement.querySelector("[data-sale-field='quantity']").value || 0),
+      unitPrice: Number(rowElement.querySelector("[data-sale-field='unitPrice']").value || 0),
+    };
+  });
+}
+
+function collectSaleItems() {
+  syncSaleItemRowsFromDom();
+  return saleItemRows
+    .filter((row) => row.medicineId)
+    .map((row) => ({
+      medicineId: row.medicineId,
+      quantity: row.quantity,
+      unitPrice: row.unitPrice,
+    }));
 }
 
 function optionMarkup(value, label) {
@@ -812,6 +971,7 @@ function renderSales() {
           <td>
             <div class="table-actions">
               <button class="mini-button" type="button" data-open-invoice="${sale.id}">Preview</button>
+              <button class="mini-button" type="button" data-edit-sale="${sale.id}">Edit</button>
               <button class="mini-button danger" type="button" data-delete-sale="${sale.id}">Delete</button>
             </div>
           </td>
@@ -840,6 +1000,7 @@ function renderInvoices() {
           <td>
             <div class="table-actions">
               <button class="mini-button" type="button" data-open-invoice="${sale.id}">Preview</button>
+              <button class="mini-button" type="button" data-edit-sale="${sale.id}">Edit</button>
               ${sale.paymentStatus !== "Paid" ? `<button class="mini-button" type="button" data-add-payment="${sale.id}">Add payment</button>` : ""}
               <button class="mini-button danger" type="button" data-delete-sale="${sale.id}">Delete</button>
             </div>
@@ -860,6 +1021,9 @@ function renderInvoices() {
 function bindSaleTableActions(container) {
   container.querySelectorAll("[data-open-invoice]").forEach((button) => {
     button.addEventListener("click", () => openInvoice(button.dataset.openInvoice));
+  });
+  container.querySelectorAll("[data-edit-sale]").forEach((button) => {
+    button.addEventListener("click", () => editSale(button.dataset.editSale));
   });
   container.querySelectorAll("[data-delete-sale]").forEach((button) => {
     button.addEventListener("click", () => deleteSale(button.dataset.deleteSale));
@@ -1344,29 +1508,35 @@ async function saveMedicine(event) {
   await reloadData();
 }
 
-async function createSale(event) {
+async function saveSale(event) {
   event.preventDefault();
+  const items = collectSaleItems();
+  if (!items.length) {
+    toast("Add at least one invoice item.");
+    return;
+  }
+
   const payload = {
     customerId: getValue("saleCustomer"),
-    items: [{
-      medicineId: getValue("saleMedicine"),
-      quantity: getNumber("saleQuantity"),
-      unitPrice: getNumber("salePrice"),
-    }],
+    items,
     deliveryStatus: getValue("saleDeliveryStatus"),
-    initialPaymentAmount: getNumber("saleInitialPayment"),
-    paymentMethod: getValue("salePaymentMethod"),
-    accountId: getValue("salePaymentAccount"),
     allowExpiredOverride: document.getElementById("saleExpiredOverride").checked,
     notes: getValue("saleNotes"),
   };
+  if (!editingSaleId) {
+    payload.initialPaymentAmount = getNumber("saleInitialPayment");
+    payload.paymentMethod = getValue("salePaymentMethod");
+    payload.accountId = getValue("salePaymentAccount");
+  }
 
   try {
-    const response = await api("/api/sales", { method: "POST", body: payload });
-    event.target.reset();
+    const wasEditing = Boolean(editingSaleId);
+    const path = editingSaleId ? `/api/sales/${encodeURIComponent(editingSaleId)}` : "/api/sales";
+    const method = editingSaleId ? "PUT" : "POST";
+    const response = await api(path, { method, body: payload });
     await reloadData();
-    setDefaultFormValues();
-    toast(`${response.sale.invoiceNumber} created.`);
+    resetSaleForm();
+    toast(wasEditing ? `${response.sale.invoiceNumber} updated.` : `${response.sale.invoiceNumber} created.`);
     openInvoice(response.sale.id);
   } catch (error) {
     toast(error.message);
@@ -1784,6 +1954,38 @@ function resetMedicineForm() {
   document.getElementById("cancelMedicineEdit").classList.add("hidden");
 }
 
+function editSale(id) {
+  const sale = state.sales.find((item) => item.id === id);
+  if (!sale) return;
+  editingSaleId = sale.id;
+  if (elements.invoiceDialog.open) elements.invoiceDialog.close();
+  setView("sales");
+  document.getElementById("saleFormTitle").textContent = `Edit ${sale.invoiceNumber}`;
+  document.getElementById("saleSubmitButton").textContent = "Update invoice";
+  document.getElementById("cancelSaleEdit").classList.remove("hidden");
+  document.querySelectorAll(".sale-payment-field").forEach((field) => field.classList.add("hidden"));
+  document.getElementById("saleCustomer").value = sale.customerId;
+  document.getElementById("saleDeliveryStatus").value = sale.deliveryStatus || "Ready";
+  document.getElementById("saleInitialPayment").value = "0";
+  document.getElementById("saleExpiredOverride").checked = false;
+  document.getElementById("saleNotes").value = sale.notes || "";
+  saleItemRows = (sale.items || []).map((item) => createSaleItemRow(item));
+  ensureSaleItemRows();
+  renderSaleItems();
+  document.getElementById("saleForm").scrollIntoView({ block: "start" });
+}
+
+function resetSaleForm() {
+  editingSaleId = null;
+  document.getElementById("saleForm").reset();
+  document.getElementById("saleFormTitle").textContent = "New Sale";
+  document.getElementById("saleSubmitButton").textContent = "Create invoice";
+  document.getElementById("cancelSaleEdit").classList.add("hidden");
+  document.querySelectorAll(".sale-payment-field").forEach((field) => field.classList.remove("hidden"));
+  saleItemRows = [createSaleItemRow()];
+  renderSaleItems();
+}
+
 function setDefaultFormValues() {
   const today = new Date().toISOString().slice(0, 10);
   ["purchaseDate", "paymentDate", "supplierPaymentDate", "deliveryDate", "expenseDate", "transferDate", "withdrawalDate"].forEach((id) => {
@@ -1792,14 +1994,10 @@ function setDefaultFormValues() {
   });
   const salaryMonth = document.getElementById("salaryMonth");
   if (salaryMonth && !salaryMonth.value) salaryMonth.value = today.slice(0, 7);
-  syncSalePrice();
+  if (!saleItemRows.length) saleItemRows = [createSaleItemRow()];
+  renderSaleItems();
   syncPurchaseCost();
   syncSalaryNet();
-}
-
-function syncSalePrice() {
-  const medicine = findMedicine(getValue("saleMedicine"));
-  if (medicine) document.getElementById("salePrice").value = medicine.price;
 }
 
 function syncPurchaseCost() {
@@ -2520,8 +2718,9 @@ function customerSales(id) {
 }
 
 function saleItemsLabel(sale) {
-  if (sale.items.length === 1) return `${sale.items[0].name} (${sale.items[0].batch})`;
-  return `${sale.items.length} items`;
+  const items = sale.items || [];
+  if (items.length === 1) return `${items[0].name} (${items[0].batch})`;
+  return `${items.length} items`;
 }
 
 function accountByName(name) {

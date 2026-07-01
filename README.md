@@ -46,7 +46,7 @@ Password: admin123
 - Production/manufacturing date tracking for medicine batches
 - Supplier and customer records
 - Purchases that add stock and track supplier balances
-- Sales invoices that select a medicine batch, reduce that batch stock, and block expired batches unless an admin override is used
+- Sales invoices with multiple medicine line items, per-batch stock deduction, and expired-batch blocking unless an admin override is used
 - Invoice preview and print with batch number, production date, expiry date, payment history, and signatures
 - Delete sale/invoice action that restores sold stock and reverses linked payment transactions
 - Goods Delivery Receipt / Customer Receiving Receipt generation and print view

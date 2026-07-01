@@ -381,6 +381,16 @@ async function handleApi(request, response, url) {
   }
 
   const saleMatch = url.pathname.match(/^\/api\/sales\/([^/]+)$/);
+  if (saleMatch && request.method === "PUT") {
+    requirePermission(currentUser, "sales");
+    requireAnyFeature(currentUser, ["sales", "invoices"]);
+    const body = await readJsonBody(request);
+    const sale = updateSale(decodeURIComponent(saleMatch[1]), body, currentUser);
+    saveDatabase(db);
+    sendJson(response, 200, { sale });
+    return;
+  }
+
   if (saleMatch && request.method === "DELETE") {
     requirePermission(currentUser, "sales");
     requireAnyFeature(currentUser, ["sales", "invoices"]);
@@ -987,40 +997,9 @@ function createSale(body, currentUser) {
   const customer = db.customers.find((item) => item.id === body.customerId);
   if (!customer) throwError("Valid customer is required", 400);
 
-  const rawItems = Array.isArray(body.items) ? body.items : [];
-  if (!rawItems.length) throwError("At least one sale item is required", 400);
-
-  const items = [];
-  for (const item of rawItems) {
-    const medicine = db.medicines.find((entry) => entry.id === item.medicineId);
-    if (!medicine) throwError("Sale includes an unknown medicine batch", 400);
-    const quantity = positiveNumber(item.quantity);
-    const unitPrice = item.unitPrice === undefined || item.unitPrice === "" ? medicine.price : moneyNumber(item.unitPrice);
-    if (!quantity || unitPrice === null) throwError("Valid quantity and price are required", 400);
-    if (medicine.stock < quantity) throwError(`${medicine.name} batch ${medicine.batch} only has ${medicine.stock} units available`, 409);
-    if (isExpired(medicine.expiry) && !(body.allowExpiredOverride && currentUser.role === "Admin")) {
-      throwError(`${medicine.name} batch ${medicine.batch} is expired and cannot be sold without admin override`, 409);
-    }
-
-    items.push({
-      medicineId: medicine.id,
-      name: medicine.name,
-      sku: medicine.sku,
-      batch: medicine.batch,
-      productionDate: medicine.productionDate || "",
-      expiry: medicine.expiry || "",
-      quantity,
-      unitPrice,
-      unitCost: medicine.cost,
-      lineTotal: roundMoney(quantity * unitPrice),
-    });
-  }
-
-  for (const item of items) {
-    const medicine = db.medicines.find((entry) => entry.id === item.medicineId);
-    medicine.stock -= item.quantity;
-  }
-
+  const items = normalizeSaleItems(body.items, currentUser, {
+    allowExpiredOverride: body.allowExpiredOverride,
+  });
   const total = roundMoney(items.reduce((sum, item) => sum + item.lineTotal, 0));
   const sale = {
     id: newId("sale"),
@@ -1039,6 +1018,7 @@ function createSale(body, currentUser) {
     createdBy: currentUser.id,
     createdAt: new Date().toISOString(),
   };
+  deductSaleItemsFromInventory(items);
   db.sales.push(sale);
 
   const initialPayment = moneyNumber(body.initialPaymentAmount) ?? 0;
@@ -1056,15 +1036,47 @@ function createSale(body, currentUser) {
   return sale;
 }
 
+function updateSale(saleId, body, currentUser) {
+  const sale = db.sales.find((item) => item.id === saleId);
+  if (!sale) throwError("Invoice not found", 404);
+
+  const customer = db.customers.find((item) => item.id === body.customerId);
+  if (!customer) throwError("Valid customer is required", 400);
+
+  const restoredQuantities = quantitiesByMedicine(sale.items || []);
+  const items = normalizeSaleItems(body.items, currentUser, {
+    allowExpiredOverride: body.allowExpiredOverride,
+    availableAdjustments: restoredQuantities,
+  });
+  const total = roundMoney(items.reduce((sum, item) => sum + item.lineTotal, 0));
+  const paid = roundMoney(db.customerPayments.filter((payment) => payment.saleId === sale.id).reduce((sum, payment) => sum + payment.amount, 0));
+  if (paid > total) {
+    throwError(`Invoice total cannot be lower than recorded payments of ${paid}. Delete or adjust payments first.`, 400);
+  }
+
+  restoreSaleItemsToInventory(sale.items || []);
+  deductSaleItemsFromInventory(items);
+
+  sale.customerId = customer.id;
+  sale.items = items;
+  sale.total = total;
+  sale.deliveryStatus = ["Ready", "Scheduled", "Delivered"].includes(body.deliveryStatus) ? body.deliveryStatus : sale.deliveryStatus || "Ready";
+  sale.notes = cleanText(body.notes || "");
+  sale.updatedBy = currentUser.id;
+  sale.updatedAt = new Date().toISOString();
+  syncSaleLinkedDocuments(sale, customer);
+  recalculateSalePaymentStatus(sale);
+
+  addAudit(currentUser, "sale:update", `${sale.invoiceNumber} ${customer.name}`);
+  return sale;
+}
+
 function deleteSale(saleId, currentUser) {
   const saleIndex = db.sales.findIndex((item) => item.id === saleId);
   if (saleIndex === -1) throwError("Invoice not found", 404);
 
   const sale = db.sales[saleIndex];
-  for (const item of sale.items) {
-    const medicine = db.medicines.find((entry) => entry.id === item.medicineId);
-    if (medicine) medicine.stock += item.quantity;
-  }
+  restoreSaleItemsToInventory(sale.items || []);
 
   const payments = db.customerPayments.filter((payment) => payment.saleId === sale.id);
   for (const payment of payments) {
@@ -1075,6 +1087,91 @@ function deleteSale(saleId, currentUser) {
   db.sales.splice(saleIndex, 1);
   addAudit(currentUser, "sale:delete", sale.invoiceNumber);
   return sale;
+}
+
+function normalizeSaleItems(rawItems, currentUser, options = {}) {
+  const items = [];
+  const sourceItems = Array.isArray(rawItems) ? rawItems : [];
+  if (!sourceItems.length) throwError("At least one sale item is required", 400);
+
+  for (const item of sourceItems) {
+    const medicine = db.medicines.find((entry) => entry.id === item.medicineId);
+    if (!medicine) throwError("Sale includes an unknown medicine batch", 400);
+    const quantity = positiveNumber(item.quantity);
+    const unitPrice = item.unitPrice === undefined || item.unitPrice === "" ? medicine.price : moneyNumber(item.unitPrice);
+    if (!quantity || unitPrice === null) throwError("Valid quantity and price are required", 400);
+    if (isExpired(medicine.expiry) && !(options.allowExpiredOverride && currentUser.role === "Admin")) {
+      throwError(`${medicine.name} batch ${medicine.batch} is expired and cannot be sold without admin override`, 409);
+    }
+
+    items.push({
+      medicineId: medicine.id,
+      name: medicine.name,
+      sku: medicine.sku,
+      batch: medicine.batch,
+      productionDate: medicine.productionDate || "",
+      expiry: medicine.expiry || "",
+      quantity,
+      unitPrice,
+      unitCost: medicine.cost,
+      lineTotal: roundMoney(quantity * unitPrice),
+    });
+  }
+
+  const requiredQuantities = quantitiesByMedicine(items);
+  for (const [medicineId, requiredQuantity] of requiredQuantities.entries()) {
+    const medicine = db.medicines.find((entry) => entry.id === medicineId);
+    const available = medicine.stock + Number(options.availableAdjustments?.get(medicineId) || 0);
+    if (available < requiredQuantity) {
+      throwError(`${medicine.name} batch ${medicine.batch} only has ${available} units available`, 409);
+    }
+  }
+
+  return items;
+}
+
+function quantitiesByMedicine(items) {
+  return items.reduce((totals, item) => {
+    totals.set(item.medicineId, (totals.get(item.medicineId) || 0) + Number(item.quantity || 0));
+    return totals;
+  }, new Map());
+}
+
+function restoreSaleItemsToInventory(items) {
+  for (const item of items) {
+    const medicine = db.medicines.find((entry) => entry.id === item.medicineId);
+    if (medicine) medicine.stock += Number(item.quantity || 0);
+  }
+}
+
+function deductSaleItemsFromInventory(items) {
+  for (const item of items) {
+    const medicine = db.medicines.find((entry) => entry.id === item.medicineId);
+    medicine.stock -= Number(item.quantity || 0);
+  }
+}
+
+function syncSaleLinkedDocuments(sale, customer) {
+  const deliveryItems = sale.items.map((item) => ({
+    medicineId: item.medicineId,
+    name: item.name,
+    batch: item.batch,
+    expiry: item.expiry,
+    quantity: item.quantity,
+  }));
+
+  for (const payment of db.customerPayments.filter((item) => item.saleId === sale.id)) {
+    payment.customerId = customer.id;
+    payment.invoiceTotal = sale.total;
+    payment.remainingBalance = roundMoney(Math.max(sale.total - Number(payment.totalPaidSoFar || payment.amount || 0), 0));
+  }
+
+  for (const receipt of db.deliveryReceipts.filter((item) => item.saleId === sale.id)) {
+    receipt.customerId = customer.id;
+    receipt.customerName = customer.name;
+    receipt.total = sale.total;
+    receipt.items = deliveryItems.map((item) => ({ ...item }));
+  }
 }
 
 function createCustomerPayment(saleId, body, currentUser) {

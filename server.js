@@ -630,13 +630,10 @@ function loadDatabase() {
 
   try {
     const loaded = JSON.parse(fs.readFileSync(DB_PATH, "utf8"));
-    const migrated = migrateDatabase(loaded);
-    saveDatabase(migrated);
-    return migrated;
-  } catch {
-    const fresh = initialDatabase();
-    saveDatabase(fresh);
-    return fresh;
+    return migrateDatabase(loaded);
+  } catch (error) {
+    console.error("Failed to read database.json. The file was not modified.", error);
+    return initialDatabase();
   }
 }
 
@@ -773,9 +770,12 @@ function migrateDatabase(source) {
   }
 
   for (const sale of dbToMigrate.sales) {
-    sale.items = Array.isArray(sale.items) ? sale.items : [];
+    const existingItems = Array.isArray(sale.items) ? sale.items : [];
+    sale.items = existingItems.length ? existingItems : saleItemsFromLegacySale(sale, dbToMigrate);
     for (const item of sale.items) {
       const medicine = dbToMigrate.medicines.find((entry) => entry.id === item.medicineId);
+      item.name = item.name || item.medicineName || item.productName || medicine?.name || "";
+      item.sku = item.sku || medicine?.sku || "";
       item.batch = item.batch || medicine?.batch || "";
       item.productionDate = item.productionDate || medicine?.productionDate || "";
       item.expiry = item.expiry || medicine?.expiry || "";
@@ -820,6 +820,31 @@ function migrateDatabase(source) {
   dbToMigrate.settings.schemaVersion = CURRENT_SCHEMA_VERSION;
   updateAccountBalances(dbToMigrate);
   return dbToMigrate;
+}
+
+function saleItemsFromLegacySale(sale, source) {
+  const medicineId = cleanText(sale.medicineId || sale.productId || sale.itemId || "");
+  if (!medicineId) return [];
+  const quantity = positiveNumber(sale.quantity ?? sale.qty ?? sale.units);
+  if (!quantity) return [];
+
+  const medicine = source.medicines.find((entry) => entry.id === medicineId);
+  const saleTotal = moneyNumber(sale.lineTotal ?? sale.total);
+  const derivedUnitPrice = saleTotal && quantity ? roundMoney(saleTotal / quantity) : null;
+  const unitPrice = moneyNumber(sale.unitPrice ?? sale.price ?? sale.sellingPrice) ?? derivedUnitPrice ?? medicine?.price ?? 0;
+
+  return [{
+    medicineId,
+    name: cleanText(sale.name || sale.medicineName || sale.productName || medicine?.name || ""),
+    sku: cleanText(sale.sku || medicine?.sku || ""),
+    batch: cleanText(sale.batch || medicine?.batch || ""),
+    productionDate: cleanText(sale.productionDate || medicine?.productionDate || ""),
+    expiry: cleanText(sale.expiry || medicine?.expiry || ""),
+    quantity,
+    unitPrice,
+    unitCost: moneyNumber(sale.unitCost ?? sale.cost) ?? medicine?.cost ?? 0,
+    lineTotal: roundMoney(quantity * unitPrice),
+  }];
 }
 
 function defaultAccounts(createdAt) {

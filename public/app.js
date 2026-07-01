@@ -320,14 +320,16 @@ function bindBaseEvents() {
   document.getElementById("cancelMedicineEdit").addEventListener("click", resetMedicineForm);
   document.getElementById("saleForm").addEventListener("submit", saveSale);
   document.getElementById("saleAddItem").addEventListener("click", () => addSaleItemRow());
-  document.getElementById("bonusAddItem").addEventListener("click", () => addBonusItemRow());
+  document.getElementById("bonusAddItem")?.addEventListener("click", () => addBonusItemRow());
   document.getElementById("cancelSaleEdit").addEventListener("click", resetSaleForm);
   elements.saleItemsBody.addEventListener("input", handleSaleItemInput);
   elements.saleItemsBody.addEventListener("change", handleSaleItemInput);
   elements.saleItemsBody.addEventListener("click", handleSaleItemClick);
-  elements.bonusItemsBody.addEventListener("input", handleBonusItemInput);
-  elements.bonusItemsBody.addEventListener("change", handleBonusItemInput);
-  elements.bonusItemsBody.addEventListener("click", handleBonusItemClick);
+  if (elements.bonusItemsBody) {
+    elements.bonusItemsBody.addEventListener("input", handleBonusItemInput);
+    elements.bonusItemsBody.addEventListener("change", handleBonusItemInput);
+    elements.bonusItemsBody.addEventListener("click", handleBonusItemClick);
+  }
   bindBarcodeInput("saleBarcode", fillSaleFromBarcode);
   document.getElementById("purchaseForm").addEventListener("submit", savePurchase);
   document.getElementById("purchaseMedicine").addEventListener("change", syncPurchaseCost);
@@ -799,7 +801,7 @@ function addBonusItemRow(data = {}) {
   bonusItemRows.push(createBonusItemRow(data));
   renderBonusItems();
   const row = bonusItemRows[bonusItemRows.length - 1];
-  elements.bonusItemsBody.querySelector(`[data-bonus-item-row="${row.rowId}"] select`)?.focus();
+  elements.bonusItemsBody?.querySelector(`[data-bonus-item-row="${row.rowId}"] select`)?.focus();
 }
 
 function renderBonusItems() {
@@ -812,7 +814,8 @@ function renderBonusItems() {
 
 function updateBonusCount() {
   const populatedRows = bonusItemRows.filter((row) => row.medicineId).length;
-  document.getElementById("bonusItemsCount").textContent = populatedRows ? `${populatedRows} FREE` : "No bonus items";
+  const count = document.getElementById("bonusItemsCount");
+  if (count) count.textContent = populatedRows ? `${populatedRows} FREE` : "No bonus items";
 }
 
 function bonusItemRowMarkup(row) {
@@ -852,6 +855,10 @@ function handleBonusItemClick(event) {
 }
 
 function syncBonusItemRowsFromDom() {
+  if (!elements.bonusItemsBody) {
+    bonusItemRows = [];
+    return;
+  }
   bonusItemRows = [...elements.bonusItemsBody.querySelectorAll("[data-bonus-item-row]")].map((rowElement) => {
     const row = bonusItemRows.find((item) => item.rowId === rowElement.dataset.bonusItemRow) || createBonusItemRow();
     return {
@@ -1270,7 +1277,7 @@ function renderReports() {
 
   const totalsByMedicine = {};
   for (const sale of sales) {
-    for (const item of sale.items) totalsByMedicine[item.medicineId] = (totalsByMedicine[item.medicineId] || 0) + item.lineTotal;
+    for (const item of sale.items || []) totalsByMedicine[item.medicineId] = (totalsByMedicine[item.medicineId] || 0) + item.lineTotal;
   }
   const maxSale = Math.max(...Object.values(totalsByMedicine), 1);
   const bars = Object.entries(totalsByMedicine)
@@ -2188,7 +2195,7 @@ function invoiceMarkup(id, type = "customer", options = {}) {
   const invoiceCost = saleItemCostTotal(sale);
   const invoiceProfit = roundMoney(Number(sale.total || 0) - invoiceCost);
   const createdBy = state.users.find((user) => user.id === sale.createdBy);
-  const rows = sale.items.map((item) => {
+  const rows = (sale.items || []).map((item) => {
     const itemCost = roundMoney(Number(item.quantity || 0) * Number(item.unitCost || 0));
     const itemProfit = roundMoney(Number(item.lineTotal || 0) - itemCost);
     if (isInternal) {
@@ -2662,7 +2669,7 @@ function supplierPaymentVoucherMarkup(payment) {
 
 function deliveryReceiptMarkup(receipt) {
   const sale = state.sales.find((item) => item.id === receipt.saleId);
-  const rows = receipt.items.map((item) => `
+  const rows = (receipt.items || []).map((item) => `
     <tr>
       <td>${escapeHtml(item.name)}</td>
       <td>${escapeHtml(item.batch)}</td>

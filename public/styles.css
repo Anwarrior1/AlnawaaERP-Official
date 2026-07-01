@@ -1599,6 +1599,284 @@ dialog::backdrop {
   white-space: nowrap;
 }
 
+.sales-invoice-paper {
+  --invoice-ink: #111111;
+  --invoice-line: #171717;
+  --invoice-muted: #4b5563;
+  width: min(100%, 794px);
+  min-width: 760px;
+  min-height: 1123px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 54px 64px 0;
+  border: 1px solid #e6e6e6;
+  border-radius: 0;
+  background: #ffffff;
+  color: var(--invoice-ink);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.12);
+}
+
+.sales-invoice-paper::before {
+  inset: 220px 30px 176px;
+  background-size: min(78%, 620px);
+  opacity: 0.045;
+}
+
+.sales-invoice-paper .invoice-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 250px;
+  align-items: start;
+  gap: 36px;
+}
+
+.sales-invoice-paper .document-brand {
+  max-width: 390px;
+  gap: 7px;
+}
+
+.sales-invoice-paper .document-brand img {
+  width: 285px;
+  max-width: 100%;
+}
+
+.sales-invoice-paper .document-brand p,
+.sales-invoice-paper .document-title-block p,
+.sales-invoice-paper p,
+.sales-invoice-paper h3 {
+  margin: 0;
+}
+
+.sales-invoice-paper .document-brand p {
+  color: var(--invoice-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.sales-invoice-paper .document-title-block {
+  min-width: 0;
+  margin-left: 0;
+  padding-top: 8px;
+  display: grid;
+  gap: 8px;
+  color: var(--invoice-ink);
+  text-align: left;
+}
+
+.sales-invoice-paper .document-title-block strong {
+  color: var(--invoice-ink);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.sales-invoice-paper .document-title-block p {
+  color: var(--invoice-ink);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.sales-invoice-paper .invoice-head + div {
+  width: min(360px, 52%);
+  display: grid;
+  gap: 6px;
+  color: var(--invoice-ink);
+}
+
+.sales-invoice-paper .invoice-head + div strong {
+  font-size: 1rem;
+}
+
+.sales-invoice-paper .invoice-head + div p {
+  color: var(--invoice-muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.sales-invoice-paper .table-wrap {
+  overflow: visible;
+  border: 0;
+  border-top: 2px solid var(--invoice-line);
+  border-bottom: 2px solid var(--invoice-line);
+  border-radius: 0;
+  background: transparent;
+}
+
+.sales-invoice-paper .invoice-head + div + .table-wrap {
+  min-height: 315px;
+  margin-top: 10px;
+}
+
+.sales-invoice-paper table {
+  min-width: 0;
+  table-layout: fixed;
+  background: transparent;
+}
+
+.sales-invoice-paper th,
+.sales-invoice-paper td {
+  padding: 14px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--invoice-ink);
+  font-size: 0.74rem;
+  line-height: 1.45;
+  text-transform: none;
+}
+
+.sales-invoice-paper th {
+  border-bottom: 2px solid var(--invoice-line);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.sales-invoice-paper tbody tr {
+  height: 52px;
+}
+
+.sales-invoice-paper th:first-child,
+.sales-invoice-paper td:first-child {
+  width: 28%;
+  padding-left: 0;
+  padding-right: 18px;
+}
+
+.sales-invoice-paper th:nth-child(2),
+.sales-invoice-paper td:nth-child(2) {
+  width: 12%;
+}
+
+.sales-invoice-paper th:nth-child(3),
+.sales-invoice-paper td:nth-child(3),
+.sales-invoice-paper th:nth-child(4),
+.sales-invoice-paper td:nth-child(4) {
+  width: 13%;
+}
+
+.sales-invoice-paper th:nth-child(5),
+.sales-invoice-paper td:nth-child(5) {
+  width: 7%;
+}
+
+.sales-invoice-paper th:nth-child(6),
+.sales-invoice-paper td:nth-child(6) {
+  width: 13%;
+}
+
+.sales-invoice-paper th:nth-child(7),
+.sales-invoice-paper td:nth-child(7) {
+  width: 14%;
+  padding-right: 0;
+}
+
+.sales-invoice-paper th:nth-last-child(-n + 3),
+.sales-invoice-paper td:nth-last-child(-n + 3) {
+  text-align: right;
+}
+
+.sales-invoice-paper th:nth-child(6),
+.sales-invoice-paper td:nth-child(6),
+.sales-invoice-paper th:nth-child(7),
+.sales-invoice-paper td:nth-child(7) {
+  white-space: nowrap;
+}
+
+.sales-invoice-paper .subtle,
+.sales-invoice-paper .internal-note,
+.sales-invoice-paper .compact-empty {
+  color: var(--invoice-muted);
+  font-size: 0.72rem;
+}
+
+.sales-invoice-paper h3 {
+  font-size: 0.92rem;
+  color: var(--invoice-ink);
+}
+
+.sales-invoice-paper .invoice-summary {
+  width: min(340px, 44%);
+  margin: 4px 0 0 auto;
+  gap: 9px;
+  text-align: right;
+}
+
+.sales-invoice-paper .invoice-total {
+  color: var(--invoice-ink);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.sales-invoice-paper .internal-invoice-details div {
+  border-color: #d7d7d7;
+  border-radius: 0;
+  background: #ffffff;
+}
+
+.sales-invoice-paper .signature-grid {
+  gap: 18px;
+  margin-top: 6px;
+}
+
+.sales-invoice-paper .signature-box {
+  min-height: 72px;
+  align-content: end;
+  padding: 0 0 10px;
+  border: 0;
+  border-bottom: 1px solid var(--invoice-line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--invoice-muted);
+}
+
+.sales-invoice-paper .document-footer {
+  min-height: 64px;
+  margin: auto -64px 0;
+  padding: 16px 64px;
+  background: #ef604a;
+  color: #ffffff;
+  gap: 10px 20px;
+  font-size: 0.76rem;
+}
+
+body.theme-dark .sales-invoice-paper {
+  border-color: #e6e6e6;
+  background: #ffffff;
+  color: #111111;
+}
+
+body.theme-dark .sales-invoice-paper .document-brand p,
+body.theme-dark .sales-invoice-paper .invoice-head + div p,
+body.theme-dark .sales-invoice-paper .subtle,
+body.theme-dark .sales-invoice-paper .internal-note,
+body.theme-dark .sales-invoice-paper .compact-empty,
+body.theme-dark .sales-invoice-paper .signature-box {
+  color: var(--invoice-muted);
+}
+
+body.theme-dark .sales-invoice-paper .document-title-block strong,
+body.theme-dark .sales-invoice-paper .document-title-block p,
+body.theme-dark .sales-invoice-paper .invoice-head + div strong,
+body.theme-dark .sales-invoice-paper h3,
+body.theme-dark .sales-invoice-paper th,
+body.theme-dark .sales-invoice-paper td,
+body.theme-dark .sales-invoice-paper .invoice-total {
+  color: #111111;
+}
+
+body.theme-dark .sales-invoice-paper .table-wrap {
+  border-top-color: var(--invoice-line);
+  border-bottom-color: var(--invoice-line);
+  background: transparent;
+}
+
+body.theme-dark .sales-invoice-paper th,
+body.theme-dark .sales-invoice-paper td {
+  border-color: var(--invoice-line);
+  background: transparent;
+}
+
 #printArea {
   display: none;
 }
@@ -1956,6 +2234,243 @@ dialog::backdrop {
   .document-footer {
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+}
+
+@media print {
+  #printArea .sales-invoice-paper {
+    width: 210mm !important;
+    min-width: 0 !important;
+    min-height: 297mm !important;
+    max-height: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 7mm !important;
+    margin: 0 !important;
+    padding: 16mm 18mm 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    color: #111111 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  #printArea .sales-invoice-paper::before {
+    inset: 58mm 11mm 42mm !important;
+    background-size: min(80%, 145mm) !important;
+    opacity: 0.045 !important;
+  }
+
+  #printArea .sales-invoice-paper .invoice-head {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 62mm !important;
+    align-items: start !important;
+    gap: 14mm !important;
+  }
+
+  #printArea .sales-invoice-paper .document-brand {
+    max-width: 92mm !important;
+    gap: 1.5mm !important;
+  }
+
+  #printArea .sales-invoice-paper .document-brand img {
+    width: 70mm !important;
+  }
+
+  #printArea .internal-invoice .document-brand img {
+    width: 58mm !important;
+  }
+
+  #printArea .sales-invoice-paper .document-brand p {
+    color: #4b5563 !important;
+    font-size: 7.5pt !important;
+    line-height: 1.35 !important;
+  }
+
+  #printArea .sales-invoice-paper .document-title-block {
+    min-width: 0 !important;
+    margin-left: 0 !important;
+    padding-top: 1.5mm !important;
+    display: grid !important;
+    gap: 1.8mm !important;
+    text-align: left !important;
+  }
+
+  #printArea .sales-invoice-paper .document-title-block strong {
+    color: #111111 !important;
+    font-size: 10.5pt !important;
+  }
+
+  #printArea .sales-invoice-paper .document-title-block p {
+    color: #111111 !important;
+    font-size: 8.5pt !important;
+    line-height: 1.35 !important;
+  }
+
+  #printArea .sales-invoice-paper .invoice-head + div {
+    width: 78mm !important;
+    display: grid !important;
+    gap: 1.5mm !important;
+    margin-top: 0 !important;
+  }
+
+  #printArea .sales-invoice-paper .invoice-head + div strong {
+    color: #111111 !important;
+    font-size: 10pt !important;
+  }
+
+  #printArea .sales-invoice-paper .invoice-head + div p {
+    color: #4b5563 !important;
+    font-size: 8.2pt !important;
+    line-height: 1.4 !important;
+  }
+
+  #printArea .sales-invoice-paper .table-wrap {
+    overflow: visible !important;
+    border: 0 !important;
+    border-top: 0.45mm solid #171717 !important;
+    border-bottom: 0.45mm solid #171717 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+
+  #printArea .sales-invoice-paper .invoice-head + div + .table-wrap {
+    min-height: 78mm !important;
+    margin-top: 3mm !important;
+  }
+
+  #printArea .sales-invoice-paper table {
+    min-width: 0 !important;
+    table-layout: fixed !important;
+    background: transparent !important;
+  }
+
+  #printArea .sales-invoice-paper th,
+  #printArea .sales-invoice-paper td {
+    padding: 3.4mm 1mm !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: #111111 !important;
+    font-size: 7.3pt !important;
+    line-height: 1.35 !important;
+    text-transform: none !important;
+  }
+
+  #printArea .sales-invoice-paper th {
+    padding: 4mm 1mm 3.5mm !important;
+    border-bottom: 0.45mm solid #171717 !important;
+    font-size: 8.6pt !important;
+    font-weight: 800 !important;
+  }
+
+  #printArea .sales-invoice-paper tbody tr {
+    height: 11.5mm !important;
+  }
+
+  #printArea .sales-invoice-paper th:first-child,
+  #printArea .sales-invoice-paper td:first-child {
+    width: 28% !important;
+    padding-left: 0 !important;
+    padding-right: 5mm !important;
+  }
+
+  #printArea .sales-invoice-paper th:nth-child(2),
+  #printArea .sales-invoice-paper td:nth-child(2) {
+    width: 12% !important;
+  }
+
+  #printArea .sales-invoice-paper th:nth-child(3),
+  #printArea .sales-invoice-paper td:nth-child(3),
+  #printArea .sales-invoice-paper th:nth-child(4),
+  #printArea .sales-invoice-paper td:nth-child(4) {
+    width: 13% !important;
+  }
+
+  #printArea .sales-invoice-paper th:nth-child(5),
+  #printArea .sales-invoice-paper td:nth-child(5) {
+    width: 7% !important;
+  }
+
+  #printArea .sales-invoice-paper th:nth-child(6),
+  #printArea .sales-invoice-paper td:nth-child(6) {
+    width: 13% !important;
+  }
+
+  #printArea .sales-invoice-paper th:nth-child(7),
+  #printArea .sales-invoice-paper td:nth-child(7) {
+    width: 14% !important;
+    padding-right: 0 !important;
+  }
+
+  #printArea .sales-invoice-paper th:nth-last-child(-n + 3),
+  #printArea .sales-invoice-paper td:nth-last-child(-n + 3) {
+    text-align: right !important;
+  }
+
+  #printArea .sales-invoice-paper th:nth-child(6),
+  #printArea .sales-invoice-paper td:nth-child(6),
+  #printArea .sales-invoice-paper th:nth-child(7),
+  #printArea .sales-invoice-paper td:nth-child(7) {
+    white-space: nowrap !important;
+  }
+
+  #printArea .sales-invoice-paper .subtle,
+  #printArea .sales-invoice-paper .internal-note,
+  #printArea .sales-invoice-paper .compact-empty {
+    color: #4b5563 !important;
+    font-size: 6.8pt !important;
+  }
+
+  #printArea .sales-invoice-paper h3 {
+    color: #111111 !important;
+    font-size: 9pt !important;
+  }
+
+  #printArea .sales-invoice-paper .invoice-summary {
+    width: 78mm !important;
+    margin: 2mm 0 0 auto !important;
+    gap: 2mm !important;
+    text-align: right !important;
+  }
+
+  #printArea .sales-invoice-paper .invoice-total {
+    color: #111111 !important;
+    font-size: 10pt !important;
+  }
+
+  #printArea .sales-invoice-paper .internal-invoice-details div {
+    padding: 2mm !important;
+    border-color: #d7d7d7 !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+  }
+
+  #printArea .sales-invoice-paper .signature-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6mm !important;
+    margin-top: 4mm !important;
+  }
+
+  #printArea .sales-invoice-paper .signature-box {
+    min-height: 18mm !important;
+    padding: 0 0 2mm !important;
+    border: 0 !important;
+    border-bottom: 0.25mm solid #171717 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: #4b5563 !important;
+    font-size: 7.5pt !important;
+  }
+
+  #printArea .sales-invoice-paper .document-footer {
+    min-height: 18mm !important;
+    margin: auto -18mm 0 !important;
+    padding: 5mm 18mm !important;
+    background: #ef604a !important;
+    color: #ffffff !important;
+    gap: 2mm 6mm !important;
+    font-size: 8pt !important;
   }
 }
 

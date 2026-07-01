@@ -466,6 +466,11 @@ body.theme-dark .pill.success {
   color: #d9f7f5;
 }
 
+body.theme-dark .free-label {
+  background: rgba(9, 178, 172, 0.2);
+  color: #d9f7f5;
+}
+
 body.theme-dark .scanner-field {
   border-color: rgba(9, 178, 172, 0.44);
   background: rgba(9, 178, 172, 0.1);
@@ -931,6 +936,34 @@ textarea:focus {
 .sale-items-table td:nth-child(4) {
   width: 15%;
   white-space: nowrap;
+}
+
+.bonus-items-table {
+  min-width: 620px;
+}
+
+.bonus-items-table th:nth-child(1),
+.bonus-items-table td:nth-child(1) {
+  width: 55%;
+}
+
+.bonus-items-table th:nth-child(2),
+.bonus-items-table td:nth-child(2),
+.bonus-items-table th:nth-child(3),
+.bonus-items-table td:nth-child(3) {
+  width: 15%;
+}
+
+.free-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #e7f8f1;
+  color: var(--success);
+  font-size: 0.78rem;
+  font-weight: 900;
 }
 
 .sale-total-row {

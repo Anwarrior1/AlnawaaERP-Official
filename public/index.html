@@ -224,6 +224,28 @@
                     <strong id="saleInvoiceTotal">LYD 0.000</strong>
                   </div>
                 </div>
+                <div class="sale-items-editor bonus-items-editor full-span">
+                  <div class="sale-items-toolbar">
+                    <div>
+                      <strong>Bonus</strong>
+                      <span class="subtle" id="bonusItemsCount">No bonus items</span>
+                    </div>
+                    <button class="button ghost" id="bonusAddItem" type="button">Add Bonus</button>
+                  </div>
+                  <div class="table-wrap sale-items-wrap">
+                    <table class="sale-items-table bonus-items-table">
+                      <thead>
+                        <tr>
+                          <th>Product</th>
+                          <th>Quantity</th>
+                          <th>Price</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="bonusItemsBody"></tbody>
+                    </table>
+                  </div>
+                </div>
                 <label>
                   Delivery status
                   <select id="saleDeliveryStatus">

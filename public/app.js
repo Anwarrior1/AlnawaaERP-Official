@@ -7,6 +7,8 @@ let selectedPurchaseId = null;
 let editingSaleId = null;
 let saleItemRows = [];
 let saleItemSequence = 0;
+let bonusItemRows = [];
+let bonusItemSequence = 0;
 let selectedDocumentHtml = "";
 let currentLanguage = localStorage.getItem("alnawaa_language") || "en";
 let currentTheme = localStorage.getItem("alnawaa_theme") || "dark";
@@ -124,6 +126,7 @@ const elements = {
   salesTable: document.getElementById("salesTable"),
   saleItemsBody: document.getElementById("saleItemsBody"),
   saleInvoiceTotal: document.getElementById("saleInvoiceTotal"),
+  bonusItemsBody: document.getElementById("bonusItemsBody"),
   invoiceTable: document.getElementById("invoiceTable"),
   purchaseTable: document.getElementById("purchaseTable"),
   supplierCards: document.getElementById("supplierCards"),
@@ -317,10 +320,14 @@ function bindBaseEvents() {
   document.getElementById("cancelMedicineEdit").addEventListener("click", resetMedicineForm);
   document.getElementById("saleForm").addEventListener("submit", saveSale);
   document.getElementById("saleAddItem").addEventListener("click", () => addSaleItemRow());
+  document.getElementById("bonusAddItem").addEventListener("click", () => addBonusItemRow());
   document.getElementById("cancelSaleEdit").addEventListener("click", resetSaleForm);
   elements.saleItemsBody.addEventListener("input", handleSaleItemInput);
   elements.saleItemsBody.addEventListener("change", handleSaleItemInput);
   elements.saleItemsBody.addEventListener("click", handleSaleItemClick);
+  elements.bonusItemsBody.addEventListener("input", handleBonusItemInput);
+  elements.bonusItemsBody.addEventListener("change", handleBonusItemInput);
+  elements.bonusItemsBody.addEventListener("click", handleBonusItemClick);
   bindBarcodeInput("saleBarcode", fillSaleFromBarcode);
   document.getElementById("purchaseForm").addEventListener("submit", savePurchase);
   document.getElementById("purchaseMedicine").addEventListener("change", syncPurchaseCost);
@@ -780,6 +787,91 @@ function collectSaleItems() {
     }));
 }
 
+function createBonusItemRow(data = {}) {
+  return {
+    rowId: data.rowId || `bonus-item-${++bonusItemSequence}`,
+    medicineId: data.medicineId || "",
+    quantity: data.quantity === undefined || data.quantity === "" ? 1 : Number(data.quantity),
+  };
+}
+
+function addBonusItemRow(data = {}) {
+  bonusItemRows.push(createBonusItemRow(data));
+  renderBonusItems();
+  const row = bonusItemRows[bonusItemRows.length - 1];
+  elements.bonusItemsBody.querySelector(`[data-bonus-item-row="${row.rowId}"] select`)?.focus();
+}
+
+function renderBonusItems() {
+  if (!state || !elements.bonusItemsBody) return;
+  elements.bonusItemsBody.innerHTML = bonusItemRows.length
+    ? bonusItemRows.map((row) => bonusItemRowMarkup(row)).join("")
+    : `<tr><td colspan="4"><div class="compact-empty">No bonus items.</div></td></tr>`;
+  updateBonusCount();
+}
+
+function updateBonusCount() {
+  const populatedRows = bonusItemRows.filter((row) => row.medicineId).length;
+  document.getElementById("bonusItemsCount").textContent = populatedRows ? `${populatedRows} FREE` : "No bonus items";
+}
+
+function bonusItemRowMarkup(row) {
+  return `
+    <tr data-bonus-item-row="${escapeHtml(row.rowId)}">
+      <td>
+        <select data-bonus-field="medicineId" required>
+          ${saleMedicineOptions(row.medicineId)}
+        </select>
+      </td>
+      <td>
+        <input data-bonus-field="quantity" type="number" min="1" step="1" value="${escapeHtml(row.quantity || "")}" required>
+      </td>
+      <td><strong class="free-label">FREE</strong></td>
+      <td><button class="mini-button danger" type="button" data-remove-bonus-item="${escapeHtml(row.rowId)}">Remove</button></td>
+    </tr>
+  `;
+}
+
+function handleBonusItemInput(event) {
+  const control = event.target.closest("[data-bonus-field]");
+  if (!control) return;
+  const rowElement = control.closest("[data-bonus-item-row]");
+  const row = bonusItemRows.find((item) => item.rowId === rowElement?.dataset.bonusItemRow);
+  if (!row) return;
+
+  const field = control.dataset.bonusField;
+  row[field] = field === "medicineId" ? control.value : Number(control.value || 0);
+  updateBonusCount();
+}
+
+function handleBonusItemClick(event) {
+  const button = event.target.closest("[data-remove-bonus-item]");
+  if (!button) return;
+  bonusItemRows = bonusItemRows.filter((row) => row.rowId !== button.dataset.removeBonusItem);
+  renderBonusItems();
+}
+
+function syncBonusItemRowsFromDom() {
+  bonusItemRows = [...elements.bonusItemsBody.querySelectorAll("[data-bonus-item-row]")].map((rowElement) => {
+    const row = bonusItemRows.find((item) => item.rowId === rowElement.dataset.bonusItemRow) || createBonusItemRow();
+    return {
+      rowId: row.rowId,
+      medicineId: rowElement.querySelector("[data-bonus-field='medicineId']").value,
+      quantity: Number(rowElement.querySelector("[data-bonus-field='quantity']").value || 0),
+    };
+  });
+}
+
+function collectBonusItems() {
+  syncBonusItemRowsFromDom();
+  return bonusItemRows
+    .filter((row) => row.medicineId)
+    .map((row) => ({
+      medicineId: row.medicineId,
+      quantity: row.quantity,
+    }));
+}
+
 function optionMarkup(value, label) {
   return `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`;
 }
@@ -837,7 +929,7 @@ function renderDashboard() {
   const withdrawals = sumByDate(state.withdrawals, "amount", monthStart, monthEnd);
   const cogs = state.sales
     .filter((sale) => inDateRange(sale.date, monthStart, monthEnd))
-    .reduce((sum, sale) => sum + sale.items.reduce((itemSum, item) => itemSum + item.quantity * item.unitCost, 0), 0);
+    .reduce((sum, sale) => sum + saleItemCostTotal(sale), 0);
   const grossProfit = totalSales - cogs;
   const netProfit = grossProfit - expenses - salaries;
   const receivables = customerBalances().reduce((sum, item) => sum + item.balance, 0);
@@ -956,7 +1048,7 @@ function inventoryRow(medicine) {
 function renderSales() {
   const term = getSearchTerm();
   const sales = [...state.sales]
-    .filter((sale) => matchesSearch([sale.invoiceNumber, customerName(sale.customerId), saleItemsLabel(sale), sale.paymentStatus, sale.deliveryStatus], term))
+    .filter((sale) => matchesSearch([sale.invoiceNumber, customerName(sale.customerId), saleItemsLabel(sale), bonusItemsLabel(sale), sale.paymentStatus, sale.deliveryStatus], term))
     .sort((a, b) => b.date.localeCompare(a.date));
 
   elements.salesTable.innerHTML = sales.length
@@ -986,7 +1078,7 @@ function renderSales() {
 function renderInvoices() {
   const term = getSearchTerm();
   const invoices = [...state.sales]
-    .filter((sale) => matchesSearch([sale.invoiceNumber, customerName(sale.customerId), sale.paymentStatus], term))
+    .filter((sale) => matchesSearch([sale.invoiceNumber, customerName(sale.customerId), saleItemsLabel(sale), bonusItemsLabel(sale), sale.paymentStatus], term))
     .sort((a, b) => b.date.localeCompare(a.date));
 
   elements.invoiceTable.innerHTML = invoices.length
@@ -1161,7 +1253,7 @@ function renderReports() {
   const salaryTotal = salaries.reduce((sum, salary) => sum + salary.netPaidAmount, 0);
   const withdrawalTotal = withdrawals.reduce((sum, withdrawal) => sum + withdrawal.amount, 0);
   const inventoryValue = state.medicines.reduce((sum, medicine) => sum + medicine.stock * medicine.cost, 0);
-  const cogs = sales.reduce((sum, sale) => sum + sale.items.reduce((itemSum, item) => itemSum + item.quantity * item.unitCost, 0), 0);
+  const cogs = sales.reduce((sum, sale) => sum + saleItemCostTotal(sale), 0);
   const grossProfit = salesTotal - cogs;
   const netProfit = grossProfit - expenseTotal - salaryTotal;
 
@@ -1511,6 +1603,7 @@ async function saveMedicine(event) {
 async function saveSale(event) {
   event.preventDefault();
   const items = collectSaleItems();
+  const bonusItems = collectBonusItems();
   if (!items.length) {
     toast("Add at least one invoice item.");
     return;
@@ -1520,6 +1613,7 @@ async function saveSale(event) {
     customerId: getValue("saleCustomer"),
     date: getValue("saleDate"),
     items,
+    bonusItems,
     deliveryStatus: getValue("saleDeliveryStatus"),
     allowExpiredOverride: document.getElementById("saleExpiredOverride").checked,
     notes: getValue("saleNotes"),
@@ -1972,8 +2066,10 @@ function editSale(id) {
   document.getElementById("saleExpiredOverride").checked = false;
   document.getElementById("saleNotes").value = sale.notes || "";
   saleItemRows = (sale.items || []).map((item) => createSaleItemRow(item));
+  bonusItemRows = (sale.bonusItems || []).map((item) => createBonusItemRow(item));
   ensureSaleItemRows();
   renderSaleItems();
+  renderBonusItems();
   document.getElementById("saleForm").scrollIntoView({ block: "start" });
 }
 
@@ -1986,7 +2082,9 @@ function resetSaleForm() {
   document.querySelectorAll(".sale-payment-field").forEach((field) => field.classList.remove("hidden"));
   document.getElementById("saleDate").value = new Date().toISOString().slice(0, 10);
   saleItemRows = [createSaleItemRow()];
+  bonusItemRows = [];
   renderSaleItems();
+  renderBonusItems();
 }
 
 function setDefaultFormValues() {
@@ -1999,6 +2097,7 @@ function setDefaultFormValues() {
   if (salaryMonth && !salaryMonth.value) salaryMonth.value = today.slice(0, 7);
   if (!saleItemRows.length) saleItemRows = [createSaleItemRow()];
   renderSaleItems();
+  renderBonusItems();
   syncPurchaseCost();
   syncSalaryNet();
 }
@@ -2085,7 +2184,8 @@ function invoiceMarkup(id, type = "customer", options = {}) {
   const isInternal = type === "internal";
   const interactive = Boolean(options.interactive);
   const documentTitle = isInternal ? "Internal Invoice" : "Customer Invoice";
-  const invoiceCost = roundMoney(sale.items.reduce((sum, item) => sum + Number(item.quantity || 0) * Number(item.unitCost || 0), 0));
+  const bonusItems = sale.bonusItems || [];
+  const invoiceCost = saleItemCostTotal(sale);
   const invoiceProfit = roundMoney(Number(sale.total || 0) - invoiceCost);
   const createdBy = state.users.find((user) => user.id === sale.createdBy);
   const rows = sale.items.map((item) => {
@@ -2116,6 +2216,36 @@ function invoiceMarkup(id, type = "customer", options = {}) {
       </tr>
     `;
   }).join("");
+  const bonusRows = bonusItems.map((item) => `
+    <tr>
+      <td>${escapeHtml(item.name)}<br><span class="subtle">${escapeHtml(item.sku || "")}</span></td>
+      <td>${escapeHtml(item.batch || "")}</td>
+      <td>${formatDate(item.productionDate)}</td>
+      <td>${formatDate(item.expiry)}</td>
+      <td>${item.quantity}</td>
+      <td><strong class="free-label">FREE</strong></td>
+      <td><strong class="free-label">FREE</strong></td>
+    </tr>
+  `).join("");
+  const bonusSection = bonusItems.length ? `
+    <h3>Bonus</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Batch</th>
+            <th>Production</th>
+            <th>Expiry</th>
+            <th>Qty</th>
+            <th>Unit price</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>${bonusRows}</tbody>
+      </table>
+    </div>
+  ` : "";
   const paymentHead = interactive
     ? "<tr><th>Receipt</th><th>Date</th><th>Amount</th><th>Method</th><th>Actions</th></tr>"
     : "<tr><th>Receipt</th><th>Date</th><th>Amount</th><th>Method</th></tr>";
@@ -2215,6 +2345,7 @@ function invoiceMarkup(id, type = "customer", options = {}) {
           <tbody>${rows}</tbody>
         </table>
       </div>
+      ${bonusSection}
       ${sale.notes ? `<p><strong>Notes:</strong> ${escapeHtml(sale.notes)}</p>` : ""}
       ${internalDetails}
       <div class="invoice-summary">
@@ -2539,6 +2670,25 @@ function deliveryReceiptMarkup(receipt) {
       <td>${item.quantity}</td>
     </tr>
   `).join("");
+  const bonusItems = receipt.bonusItems || sale?.bonusItems || [];
+  const bonusRows = bonusItems.map((item) => `
+    <tr>
+      <td>${escapeHtml(item.name)}</td>
+      <td>${escapeHtml(item.batch)}</td>
+      <td>${formatDate(item.expiry)}</td>
+      <td>${item.quantity}</td>
+      <td><strong class="free-label">FREE</strong></td>
+    </tr>
+  `).join("");
+  const bonusSection = bonusItems.length ? `
+    <h3>Bonus</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Product</th><th>Batch</th><th>Expiry</th><th>Quantity delivered</th><th>Price</th></tr></thead>
+        <tbody>${bonusRows}</tbody>
+      </table>
+    </div>
+  ` : "";
   return `
     <section class="invoice-paper">
       <div class="invoice-head">
@@ -2562,6 +2712,7 @@ function deliveryReceiptMarkup(receipt) {
           <tbody>${rows}</tbody>
         </table>
       </div>
+      ${bonusSection}
       <div class="invoice-total">Invoice total: ${formatMoney(receipt.total || sale?.total || 0)}</div>
       <p><strong>Notes:</strong> ${escapeHtml(receipt.notes || "")}</p>
       <div class="signature-grid">
@@ -2701,7 +2852,9 @@ function findMedicine(id) {
 }
 
 function medicineName(id) {
-  return findMedicine(id)?.name || state.sales.flatMap((sale) => sale.items).find((item) => item.medicineId === id)?.name || "Unknown medicine";
+  return findMedicine(id)?.name
+    || state.sales.flatMap((sale) => [...(sale.items || []), ...(sale.bonusItems || [])]).find((item) => item.medicineId === id)?.name
+    || "Unknown medicine";
 }
 
 function supplierName(id) {
@@ -2722,8 +2875,21 @@ function customerSales(id) {
 
 function saleItemsLabel(sale) {
   const items = sale.items || [];
-  if (items.length === 1) return `${items[0].name} (${items[0].batch})`;
-  return `${items.length} items`;
+  const bonusCount = (sale.bonusItems || []).length;
+  const bonusLabel = bonusCount ? ` + ${bonusCount} bonus` : "";
+  if (items.length === 1) return `${items[0].name} (${items[0].batch})${bonusLabel}`;
+  return `${items.length} items${bonusLabel}`;
+}
+
+function bonusItemsLabel(sale) {
+  return (sale.bonusItems || []).map((item) => `${item.name} (${item.batch}) FREE`).join(" ");
+}
+
+function saleItemCostTotal(sale) {
+  return [...(sale.items || []), ...(sale.bonusItems || [])].reduce(
+    (sum, item) => sum + Number(item.quantity || 0) * Number(item.unitCost || 0),
+    0
+  );
 }
 
 function accountByName(name) {

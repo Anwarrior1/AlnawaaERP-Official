@@ -784,10 +784,29 @@ function migrateDatabase(source) {
       item.quantity = positiveNumber(item.quantity);
       item.lineTotal = roundMoney(item.quantity * item.unitPrice);
     }
+    sale.bonusItems = Array.isArray(sale.bonusItems) ? sale.bonusItems : [];
+    for (const item of sale.bonusItems) {
+      const medicine = dbToMigrate.medicines.find((entry) => entry.id === item.medicineId);
+      item.name = item.name || medicine?.name || "";
+      item.sku = item.sku || medicine?.sku || "";
+      item.batch = item.batch || medicine?.batch || "";
+      item.productionDate = item.productionDate || medicine?.productionDate || "";
+      item.expiry = item.expiry || medicine?.expiry || "";
+      item.unitCost = moneyNumber(item.unitCost) ?? medicine?.cost ?? 0;
+      item.unitPrice = 0;
+      item.quantity = positiveNumber(item.quantity);
+      item.lineTotal = 0;
+      item.isBonus = true;
+    }
     sale.total = roundMoney(sale.items.reduce((sum, item) => sum + item.lineTotal, 0));
     sale.paymentReceiptIds = Array.isArray(sale.paymentReceiptIds) ? sale.paymentReceiptIds : [];
     sale.deliveryReceiptIds = Array.isArray(sale.deliveryReceiptIds) ? sale.deliveryReceiptIds : [];
     recalculateSalePaymentStatus(sale, dbToMigrate);
+  }
+
+  for (const receipt of dbToMigrate.deliveryReceipts) {
+    receipt.items = Array.isArray(receipt.items) ? receipt.items : [];
+    receipt.bonusItems = Array.isArray(receipt.bonusItems) ? receipt.bonusItems : [];
   }
 
   for (const account of dbToMigrate.bankAccounts) {
@@ -878,7 +897,7 @@ function deleteMedicine(medicineId, currentUser) {
   if (index === -1) throwError("Medicine batch not found", 404);
 
   const medicine = db.medicines[index];
-  const usedInSales = db.sales.some((sale) => sale.items.some((item) => item.medicineId === medicine.id));
+  const usedInSales = db.sales.some((sale) => [...(sale.items || []), ...(sale.bonusItems || [])].some((item) => item.medicineId === medicine.id));
   const usedInPurchases = db.purchases.some((purchase) => purchase.medicineId === medicine.id);
   if (usedInSales || usedInPurchases) {
     throwError("This medicine batch is used in invoices or purchases. Delete those records first.", 400);
@@ -999,7 +1018,12 @@ function createSale(body, currentUser) {
 
   const items = normalizeSaleItems(body.items, currentUser, {
     allowExpiredOverride: body.allowExpiredOverride,
+    skipInventoryValidation: true,
   });
+  const bonusItems = normalizeBonusItems(body.bonusItems, currentUser, {
+    allowExpiredOverride: body.allowExpiredOverride,
+  });
+  validateSaleInventory([...items, ...bonusItems]);
   const total = roundMoney(items.reduce((sum, item) => sum + item.lineTotal, 0));
   const sale = {
     id: newId("sale"),
@@ -1007,6 +1031,7 @@ function createSale(body, currentUser) {
     date: normalizeDateOnly(body.date),
     customerId: customer.id,
     items,
+    bonusItems,
     total,
     totalPaid: 0,
     remainingBalance: total,
@@ -1018,7 +1043,7 @@ function createSale(body, currentUser) {
     createdBy: currentUser.id,
     createdAt: new Date().toISOString(),
   };
-  deductSaleItemsFromInventory(items);
+  deductSaleItemsFromInventory([...items, ...bonusItems]);
   db.sales.push(sale);
 
   const initialPayment = moneyNumber(body.initialPaymentAmount) ?? 0;
@@ -1043,23 +1068,29 @@ function updateSale(saleId, body, currentUser) {
   const customer = db.customers.find((item) => item.id === body.customerId);
   if (!customer) throwError("Valid customer is required", 400);
 
-  const restoredQuantities = quantitiesByMedicine(sale.items || []);
+  const restoredQuantities = quantitiesByMedicine([...(sale.items || []), ...(sale.bonusItems || [])]);
   const items = normalizeSaleItems(body.items, currentUser, {
     allowExpiredOverride: body.allowExpiredOverride,
     availableAdjustments: restoredQuantities,
+    skipInventoryValidation: true,
   });
+  const bonusItems = normalizeBonusItems(body.bonusItems, currentUser, {
+    allowExpiredOverride: body.allowExpiredOverride,
+  });
+  validateSaleInventory([...items, ...bonusItems], restoredQuantities);
   const total = roundMoney(items.reduce((sum, item) => sum + item.lineTotal, 0));
   const paid = roundMoney(db.customerPayments.filter((payment) => payment.saleId === sale.id).reduce((sum, payment) => sum + payment.amount, 0));
   if (paid > total) {
     throwError(`Invoice total cannot be lower than recorded payments of ${paid}. Delete or adjust payments first.`, 400);
   }
 
-  restoreSaleItemsToInventory(sale.items || []);
-  deductSaleItemsFromInventory(items);
+  restoreSaleItemsToInventory([...(sale.items || []), ...(sale.bonusItems || [])]);
+  deductSaleItemsFromInventory([...items, ...bonusItems]);
 
   sale.customerId = customer.id;
   sale.date = normalizeDateOnly(body.date, sale.date || dateOnly());
   sale.items = items;
+  sale.bonusItems = bonusItems;
   sale.total = total;
   sale.deliveryStatus = ["Ready", "Scheduled", "Delivered"].includes(body.deliveryStatus) ? body.deliveryStatus : sale.deliveryStatus || "Ready";
   sale.notes = cleanText(body.notes || "");
@@ -1077,7 +1108,7 @@ function deleteSale(saleId, currentUser) {
   if (saleIndex === -1) throwError("Invoice not found", 404);
 
   const sale = db.sales[saleIndex];
-  restoreSaleItemsToInventory(sale.items || []);
+  restoreSaleItemsToInventory([...(sale.items || []), ...(sale.bonusItems || [])]);
 
   const payments = db.customerPayments.filter((payment) => payment.saleId === sale.id);
   for (const payment of payments) {
@@ -1119,16 +1150,51 @@ function normalizeSaleItems(rawItems, currentUser, options = {}) {
     });
   }
 
+  if (!options.skipInventoryValidation) validateSaleInventory(items, options.availableAdjustments);
+
+  return items;
+}
+
+function normalizeBonusItems(rawItems, currentUser, options = {}) {
+  const items = [];
+  const sourceItems = Array.isArray(rawItems) ? rawItems : [];
+
+  for (const item of sourceItems) {
+    const medicine = db.medicines.find((entry) => entry.id === item.medicineId);
+    if (!medicine) throwError("Bonus includes an unknown medicine batch", 400);
+    const quantity = positiveNumber(item.quantity);
+    if (!quantity) throwError("Valid bonus quantity is required", 400);
+    if (isExpired(medicine.expiry) && !(options.allowExpiredOverride && currentUser.role === "Admin")) {
+      throwError(`${medicine.name} batch ${medicine.batch} is expired and cannot be added as a bonus without admin override`, 409);
+    }
+
+    items.push({
+      medicineId: medicine.id,
+      name: medicine.name,
+      sku: medicine.sku,
+      batch: medicine.batch,
+      productionDate: medicine.productionDate || "",
+      expiry: medicine.expiry || "",
+      quantity,
+      unitPrice: 0,
+      unitCost: medicine.cost,
+      lineTotal: 0,
+      isBonus: true,
+    });
+  }
+
+  return items;
+}
+
+function validateSaleInventory(items, availableAdjustments) {
   const requiredQuantities = quantitiesByMedicine(items);
   for (const [medicineId, requiredQuantity] of requiredQuantities.entries()) {
     const medicine = db.medicines.find((entry) => entry.id === medicineId);
-    const available = medicine.stock + Number(options.availableAdjustments?.get(medicineId) || 0);
+    const available = medicine.stock + Number(availableAdjustments?.get(medicineId) || 0);
     if (available < requiredQuantity) {
       throwError(`${medicine.name} batch ${medicine.batch} only has ${available} units available`, 409);
     }
   }
-
-  return items;
 }
 
 function quantitiesByMedicine(items) {
@@ -1160,6 +1226,14 @@ function syncSaleLinkedDocuments(sale, customer) {
     expiry: item.expiry,
     quantity: item.quantity,
   }));
+  const bonusDeliveryItems = (sale.bonusItems || []).map((item) => ({
+    medicineId: item.medicineId,
+    name: item.name,
+    batch: item.batch,
+    expiry: item.expiry,
+    quantity: item.quantity,
+    isBonus: true,
+  }));
 
   for (const payment of db.customerPayments.filter((item) => item.saleId === sale.id)) {
     payment.customerId = customer.id;
@@ -1172,6 +1246,7 @@ function syncSaleLinkedDocuments(sale, customer) {
     receipt.customerName = customer.name;
     receipt.total = sale.total;
     receipt.items = deliveryItems.map((item) => ({ ...item }));
+    receipt.bonusItems = bonusDeliveryItems.map((item) => ({ ...item }));
   }
 }
 
@@ -1267,6 +1342,14 @@ function createDeliveryReceipt(saleId, body, currentUser) {
       batch: item.batch,
       expiry: item.expiry,
       quantity: item.quantity,
+    })),
+    bonusItems: (sale.bonusItems || []).map((item) => ({
+      medicineId: item.medicineId,
+      name: item.name,
+      batch: item.batch,
+      expiry: item.expiry,
+      quantity: item.quantity,
+      isBonus: true,
     })),
     createdBy: currentUser.id,
     createdAt: new Date().toISOString(),

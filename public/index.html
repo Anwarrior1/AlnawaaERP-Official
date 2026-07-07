@@ -75,14 +75,18 @@
               <span>Search</span>
               <input id="globalSearch" type="search" placeholder="Medicine, batch, customer, invoice">
             </label>
-            <button class="button ghost" id="exportData" type="button">Export</button>
-            <button class="button ghost" id="languageToggle" type="button">العربية</button>
-            <button class="button ghost" id="themeToggle" type="button">Light mode</button>
+            <div class="topbar-action-group" aria-label="ERP actions">
+              <button class="icon-button topbar-action" id="exportData" type="button" title="Export backup" aria-label="Export backup"></button>
+              <button class="icon-button topbar-action" id="importData" type="button" title="Import backup" aria-label="Import backup"></button>
+              <input class="hidden" id="importBackupFile" type="file" accept=".json,application/json">
+              <button class="icon-button topbar-action" id="languageToggle" type="button" title="Switch language" aria-label="Switch language"></button>
+              <button class="icon-button topbar-action" id="themeToggle" type="button" title="Toggle theme" aria-label="Toggle theme"></button>
+            </div>
             <div class="user-chip">
               <strong id="currentUserName">User</strong>
               <span id="currentUserRole">Role</span>
             </div>
-            <button class="button ghost" id="logoutButton" type="button">Logout</button>
+            <button class="icon-button topbar-action" id="logoutButton" type="button" title="Logout" aria-label="Logout"></button>
           </div>
         </header>
 
@@ -915,6 +919,22 @@
         <button class="button ghost" id="clearReceipt" type="button">Clear Form</button>
         <button class="button ghost" id="downloadReceiptPdf" type="button">Download PDF</button>
         <button class="button primary" id="printReceipt" type="button">Print Receipt</button>
+      </div>
+    </dialog>
+
+    <dialog id="importDialog">
+      <div class="dialog-header">
+        <h3>Import JSON backup</h3>
+        <button class="icon-button" id="closeImportDialog" type="button" aria-label="Close import confirmation">x</button>
+      </div>
+      <div class="import-confirmation">
+        <strong id="importFileName">No file selected</strong>
+        <span id="importFileMeta">Select a JSON backup exported from this ERP.</span>
+        <p>This will replace the ERP data on this server with the selected backup.</p>
+      </div>
+      <div class="dialog-actions">
+        <button class="button ghost" id="cancelImport" type="button">Cancel</button>
+        <button class="button danger" id="confirmImport" type="button">Import backup</button>
       </div>
     </dialog>
 

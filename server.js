@@ -180,11 +180,24 @@ async function handleApi(request, response, url) {
   if (url.pathname === "/api/export" && request.method === "GET") {
     requirePermission(currentUser, "reports");
     requireFeature(currentUser, "reports");
+    const payload = hasPermission(currentUser, "all") ? db : sanitizeDatabase(db, currentUser);
     response.writeHead(200, {
       "Content-Type": "application/json; charset=utf-8",
       "Content-Disposition": `attachment; filename="AlnawaaERP-backup-${dateOnly()}.json"`,
     });
-    response.end(JSON.stringify(sanitizeDatabase(db, currentUser), null, 2));
+    response.end(JSON.stringify(payload, null, 2));
+    return;
+  }
+
+  if (url.pathname === "/api/import" && request.method === "POST") {
+    requirePermission(currentUser, "all");
+    requireFeature(currentUser, "settings");
+    const body = await readJsonBody(request);
+    const restored = importedDatabase(body.backup || body, db, currentUser);
+    db = restored;
+    addAudit(currentUser, "backup:import", "JSON backup restored");
+    saveDatabase(db);
+    sendJson(response, 200, sanitizeDatabase(db, currentUser));
     return;
   }
 
@@ -642,6 +655,54 @@ function saveDatabase(nextDb) {
   updateAccountBalances(nextDb);
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
   fs.writeFileSync(DB_PATH, JSON.stringify(nextDb, null, 2));
+}
+
+function importedDatabase(source, previousDb, currentUser) {
+  if (!source || typeof source !== "object" || Array.isArray(source)) {
+    throwError("Backup file must contain a JSON object", 400);
+  }
+  const requiredArrays = ["suppliers", "customers", "medicines", "purchases", "sales", "users"];
+  const missingKey = requiredArrays.find((key) => !Array.isArray(source[key]));
+  if (!source.settings || typeof source.settings !== "object" || missingKey) {
+    throwError("This file does not look like an AlnawaaERP backup", 400);
+  }
+
+  const nextDb = migrateDatabase(JSON.parse(JSON.stringify(source)));
+  delete nextDb.features;
+  delete nextDb.availableFeatures;
+  delete nextDb.roleFeatureDefaults;
+  delete nextDb.permissions;
+
+  preserveImportedUserCredentials(nextDb, previousDb, currentUser);
+  if (!nextDb.users.some((user) => user.role === "Admin" && user.status === "Active" && hasUsableCredentials(user))) {
+    const preservedAdmin = previousDb.users.find((user) => user.id === currentUser.id) || previousDb.users.find((user) => user.email === currentUser.email);
+    if (preservedAdmin) nextDb.users.push({ ...preservedAdmin });
+  }
+  if (!nextDb.users.some((user) => user.role === "Admin" && user.status === "Active" && hasUsableCredentials(user))) {
+    throwError("Backup must contain at least one active admin user", 400);
+  }
+  return nextDb;
+}
+
+function preserveImportedUserCredentials(nextDb, previousDb, currentUser) {
+  for (const user of nextDb.users) {
+    if (hasUsableCredentials(user)) continue;
+    const previousUser = previousDb.users.find((item) => item.id === user.id) || previousDb.users.find((item) => item.email === user.email);
+    if (!previousUser || !hasUsableCredentials(previousUser)) continue;
+    user.salt = previousUser.salt;
+    user.passwordHash = previousUser.passwordHash;
+  }
+
+  const sessionUser = nextDb.users.find((user) => user.id === currentUser.id) || nextDb.users.find((user) => user.email === currentUser.email);
+  const previousSessionUser = previousDb.users.find((user) => user.id === currentUser.id);
+  if (sessionUser && previousSessionUser && !hasUsableCredentials(sessionUser)) {
+    sessionUser.salt = previousSessionUser.salt;
+    sessionUser.passwordHash = previousSessionUser.passwordHash;
+  }
+}
+
+function hasUsableCredentials(user) {
+  return Boolean(user?.salt && typeof user.salt === "string" && /^[a-f0-9]{64}$/i.test(String(user.passwordHash || "")));
 }
 
 function initialDatabase() {
@@ -1849,9 +1910,9 @@ function readJsonBody(request) {
     let body = "";
     request.on("data", (chunk) => {
       body += chunk;
-      if (body.length > 1_000_000) {
+      if (body.length > 10_000_000) {
         request.destroy();
-        reject(new Error("Request body too large"));
+        reject(Object.assign(new Error("Request body too large"), { statusCode: 413 }));
       }
     });
     request.on("end", () => {
@@ -1963,8 +2024,11 @@ function setUserPassword(user, password) {
 }
 
 function verifyPassword(password, user) {
+  if (!hasUsableCredentials(user)) return false;
   const hash = hashPassword(password, user.salt);
-  return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(user.passwordHash));
+  const calculated = Buffer.from(hash);
+  const stored = Buffer.from(user.passwordHash);
+  return calculated.length === stored.length && crypto.timingSafeEqual(calculated, stored);
 }
 
 function hashPassword(password, salt) {

@@ -5,6 +5,7 @@ let inventoryFilter = "all";
 let selectedInvoiceId = null;
 let selectedPurchaseId = null;
 let editingSaleId = null;
+let selectedImportFile = null;
 let saleItemRows = [];
 let saleItemSequence = 0;
 let bonusItemRows = [];
@@ -12,6 +13,9 @@ let bonusItemSequence = 0;
 let selectedDocumentHtml = "";
 let currentLanguage = localStorage.getItem("alnawaa_language") || "en";
 let currentTheme = localStorage.getItem("alnawaa_theme") || "dark";
+let alertsPanelExpanded = localStorage.getItem("alnawaa_alerts_expanded") !== "false";
+let dashboardMotion = null;
+let dashboardMotionLoading = false;
 
 const translations = {
   ar: {
@@ -52,6 +56,14 @@ const translations = {
     "Scan barcode / SKU": "مسح الباركود / الرمز",
     "Download backup": "تنزيل نسخة احتياطية",
     "Reset empty system": "إعادة النظام فارغا",
+    "Export backup": "تصدير نسخة احتياطية",
+    "Import backup": "استيراد نسخة احتياطية",
+    "Switch to English": "التبديل إلى الإنجليزية",
+    "Switch to Arabic": "التبديل إلى العربية",
+    "Switch to light mode": "التبديل إلى الوضع الفاتح",
+    "Switch to dark mode": "التبديل إلى الوضع الداكن",
+    Logout: "تسجيل الخروج",
+    Cancel: "إلغاء",
     Enabled: "مفعل",
     Off: "متوقف",
     Visible: "ظاهر",
@@ -87,6 +99,14 @@ const iconPaths = {
   search: '<circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path>',
   money: '<path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"></path>',
   profit: '<path d="M3 17 9 11l4 4 8-8"></path><path d="M14 7h7v7"></path>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path>',
+  upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M17 8l-5-5-5 5"></path><path d="M12 3v12"></path>',
+  globe: '<circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a15.3 15.3 0 0 1 0 20"></path><path d="M12 2a15.3 15.3 0 0 0 0 20"></path>',
+  sun: '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>',
+  moon: '<path d="M20.99 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.78 9.79Z"></path>',
+  logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="M16 17l5-5-5-5"></path><path d="M21 12H9"></path>',
+  bell: '<path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"></path><path d="M18 8A6 6 0 0 0 6 8c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>',
+  chevronDown: '<path d="m6 9 6 6 6-6"></path>',
   warning: '<path d="m21.7 18.4-8.6-15a1.3 1.3 0 0 0-2.2 0l-8.6 15A1.3 1.3 0 0 0 3.4 20h17.2a1.3 1.3 0 0 0 1.1-1.6Z"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path>',
   calendar: '<rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path><path d="M8 14h.01"></path><path d="M12 14h.01"></path><path d="M16 14h.01"></path>',
   user: '<circle cx="12" cy="8" r="4"></circle><path d="M4 22a8 8 0 0 1 16 0"></path>',
@@ -148,6 +168,10 @@ const elements = {
   bankAccountCards: document.getElementById("bankAccountCards"),
   withdrawalTable: document.getElementById("withdrawalTable"),
   transferTable: document.getElementById("transferTable"),
+  importBackupFile: document.getElementById("importBackupFile"),
+  importDialog: document.getElementById("importDialog"),
+  importFileName: document.getElementById("importFileName"),
+  importFileMeta: document.getElementById("importFileMeta"),
   invoiceDialog: document.getElementById("invoiceDialog"),
   invoicePreview: document.getElementById("invoicePreview"),
   paymentDialog: document.getElementById("paymentDialog"),
@@ -163,6 +187,7 @@ const elements = {
 
 document.addEventListener("DOMContentLoaded", () => {
   applyTheme();
+  loadDashboardMotion();
   decorateNavigation();
   applyLanguage();
   bindDepthInteractions();
@@ -183,20 +208,35 @@ function applyLanguage() {
   document.documentElement.lang = currentLanguage === "ar" ? "ar" : "en";
   document.documentElement.dir = currentLanguage === "ar" ? "rtl" : "ltr";
   document.body.classList.toggle("rtl", currentLanguage === "ar");
-  document.getElementById("languageToggle").textContent = currentLanguage === "ar" ? "English" : "العربية";
-  updateThemeToggleLabel();
+  renderTopbarActions();
   translateStaticText();
   decorateNavigation();
 }
 
 function applyTheme() {
   document.body.classList.toggle("theme-dark", currentTheme === "dark");
-  updateThemeToggleLabel();
+  renderTopbarActions();
 }
 
 function updateThemeToggleLabel() {
-  const button = document.getElementById("themeToggle");
-  if (button) button.textContent = currentTheme === "dark" ? "Light mode" : "Dark mode";
+  renderTopbarActions();
+}
+
+function renderTopbarActions() {
+  const actions = [
+    ["exportData", "download", "Export backup"],
+    ["importData", "upload", "Import backup"],
+    ["languageToggle", "globe", currentLanguage === "ar" ? "Switch to English" : "Switch to Arabic"],
+    ["themeToggle", currentTheme === "dark" ? "sun" : "moon", currentTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"],
+    ["logoutButton", "logout", "Logout"],
+  ];
+  for (const [id, icon, label] of actions) {
+    const button = document.getElementById(id);
+    if (!button) continue;
+    button.innerHTML = iconSvg(icon);
+    button.title = t(label);
+    button.setAttribute("aria-label", t(label));
+  }
 }
 
 function translateStaticText() {
@@ -204,8 +244,6 @@ function translateStaticText() {
     [".brand-row p", "alnawaa medical group"],
     [".eyebrow", "alnawaa medical group"],
     [".search-field span", "Search"],
-    ["#exportData", "Export"],
-    ["#logoutButton", "Logout"],
     ["#downloadBackup", "Download backup"],
     ["#resetDemo", "Reset empty system"],
     ["#accountForm button[type='submit']", "Save account changes"],
@@ -263,12 +301,60 @@ function bindDepthInteractions() {
   });
 }
 
+function loadDashboardMotion() {
+  if (dashboardMotion || dashboardMotionLoading) return;
+  dashboardMotionLoading = true;
+  import("https://cdn.jsdelivr.net/npm/motion@12/+esm")
+    .then((module) => {
+      dashboardMotion = module;
+      animateDashboardMetricCards();
+    })
+    .catch(() => {
+      dashboardMotion = null;
+    })
+    .finally(() => {
+      dashboardMotionLoading = false;
+    });
+}
+
+function animateDashboardMetricCards() {
+  if (activeView !== "dashboard" || !dashboardMotion?.animate || !elements.metricGrid) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const cards = [...elements.metricGrid.querySelectorAll(".metric-card")];
+  if (!cards.length) return;
+  cards.forEach((card) => {
+    card.style.opacity = "0";
+    card.style.setProperty("--entry-y", "14px");
+  });
+  dashboardMotion.animate(
+    cards,
+    { opacity: [0, 1], "--entry-y": ["14px", "0px"] },
+    {
+      duration: 0.52,
+      delay: dashboardMotion.stagger ? dashboardMotion.stagger(0.035) : 0,
+      ease: "easeOut",
+    }
+  );
+}
+
+function metricValueMarkup(value) {
+  const text = String(value);
+  const match = text.match(/^([A-Z]{3})[\s\u00a0]+(.+)$/);
+  if (!match) return escapeHtml(text);
+  return `<span class="metric-currency">${escapeHtml(match[1])}</span><span class="metric-amount">${escapeHtml(match[2])}</span>`;
+}
+
 function bindBaseEvents() {
   elements.loginForm.addEventListener("submit", login);
   document.getElementById("logoutButton").addEventListener("click", logout);
   document.getElementById("languageToggle").addEventListener("click", toggleLanguage);
   document.getElementById("themeToggle").addEventListener("click", toggleTheme);
   document.getElementById("exportData").addEventListener("click", downloadBackup);
+  document.getElementById("importData").addEventListener("click", openImportFilePicker);
+  elements.importBackupFile.addEventListener("change", handleImportFileSelection);
+  document.getElementById("closeImportDialog").addEventListener("click", closeImportDialog);
+  document.getElementById("cancelImport").addEventListener("click", closeImportDialog);
+  document.getElementById("confirmImport").addEventListener("click", importSelectedBackup);
   document.getElementById("downloadBackup").addEventListener("click", downloadBackup);
   document.getElementById("resetDemo").addEventListener("click", resetSystemData);
   document.getElementById("closeInvoiceDialog").addEventListener("click", () => elements.invoiceDialog.close());
@@ -296,6 +382,7 @@ function bindBaseEvents() {
   document.getElementById("downloadReceiptPdf").addEventListener("click", printManualReceipt);
   document.getElementById("printReport").addEventListener("click", printReportView);
   document.getElementById("exportReportCsv").addEventListener("click", exportReportCsv);
+  elements.alertStrip.addEventListener("click", handleAlertsPanelClick);
   elements.search.addEventListener("input", render);
 
   document.querySelectorAll("[data-view]").forEach((button) => {
@@ -893,35 +980,109 @@ function renderAlerts() {
   const expenseWarning = monthlyExpenses > 0 && monthlyExpenses > salesThisMonth * 0.7;
   const alerts = [
     {
-      type: lowStock ? "warning" : "",
-      title: `${lowStock} low-stock items`,
-      detail: lowStock ? "Review reorder plan" : "Stock levels look healthy",
+      active: Boolean(lowStock),
+      tone: "warning",
+      icon: "inventory",
+      title: lowStock === 1 ? "Low Stock" : "Low Stock",
+      detail: lowStock === 1 ? "1 product is below the minimum stock level." : `${lowStock} products are below the minimum stock level.`,
+      target: "inventory",
+      filter: "low",
     },
     {
-      type: expired || expiring ? "danger" : "",
-      title: `${expired} expired / ${expiring} near expiry`,
-      detail: expired ? "Expired batches are blocked from sale" : expiring ? "Prioritize near-expiry stock" : "No urgent expiry risk",
+      active: Boolean(expired || expiring),
+      tone: expired ? "danger" : "orange",
+      icon: expired ? "warning" : "calendar",
+      title: expired ? "Critical Expiry Alert" : "Near Expiry",
+      detail: expired
+        ? `${expired} expired ${expired === 1 ? "batch is" : "batches are"} blocked from sale.`
+        : `${expiring} ${expiring === 1 ? "product is" : "products are"} approaching expiry.`,
+      target: "inventory",
+      filter: "expiry",
     },
     {
-      type: unpaid ? "warning" : "",
-      title: `${unpaid} unpaid or partial invoices`,
-      detail: unpaid ? "Follow up with customers" : "Invoices are paid",
+      active: Boolean(unpaid),
+      tone: "orange",
+      icon: "invoices",
+      title: "Unpaid Invoice",
+      detail: unpaid === 1 ? "1 invoice requires payment." : `${unpaid} invoices require payment.`,
+      target: "invoices",
     },
     {
-      type: expenseWarning ? "danger" : "",
-      title: expenseWarning ? "High expenses this month" : "Expenses normal",
-      detail: `${formatMoney(monthlyExpenses)} expenses vs ${formatMoney(salesThisMonth)} sales`,
+      active: Boolean(expenseWarning),
+      tone: "danger",
+      icon: "expenses",
+      title: "Critical Alert",
+      detail: `Monthly expenses are high: ${formatMoney(monthlyExpenses)} vs ${formatMoney(salesThisMonth)} sales.`,
+      target: "expenses",
     },
-  ];
+  ].filter((alert) => alert.active);
 
-  elements.alertStrip.innerHTML = alerts
-    .map((alert) => `
-      <article class="alert-card ${alert.type}">
+  elements.alertStrip.innerHTML = `
+    <section class="alerts-panel ${alertsPanelExpanded ? "is-expanded" : ""}" aria-label="Dashboard alerts">
+      <button class="alerts-panel-header" type="button" data-alert-toggle aria-expanded="${alertsPanelExpanded}">
+        <span class="alerts-heading">
+          <span class="alerts-bell">${iconSvg("bell")}</span>
+          <span class="alerts-title">Alerts</span>
+          <span class="alerts-count" aria-label="${alerts.length} active alerts">(${alerts.length})</span>
+        </span>
+        <span class="alerts-chevron" aria-hidden="true">${iconSvg("chevronDown")}</span>
+      </button>
+      <div class="alerts-panel-body">
+        <div class="alerts-panel-inner">
+          ${alerts.length ? alerts.map(alertListItem).join("") : emptyAlertsMarkup()}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function alertListItem(alert) {
+  return `
+    <button class="alert-list-item alert-${escapeHtml(alert.tone)}" type="button" data-alert-target="${escapeHtml(alert.target)}" ${alert.filter ? `data-alert-filter="${escapeHtml(alert.filter)}"` : ""}>
+      <span class="alert-status-dot" aria-hidden="true"></span>
+      <span class="alert-list-icon">${iconSvg(alert.icon)}</span>
+      <span class="alert-list-copy">
         <strong>${escapeHtml(alert.title)}</strong>
         <span>${escapeHtml(alert.detail)}</span>
-      </article>
-    `)
-    .join("");
+      </span>
+    </button>
+  `;
+}
+
+function emptyAlertsMarkup() {
+  return `
+    <div class="alert-list-item alert-success alert-empty" aria-live="polite">
+      <span class="alert-status-dot" aria-hidden="true"></span>
+      <span class="alert-list-icon">${iconSvg("bell")}</span>
+      <span class="alert-list-copy">
+        <strong>No active alerts</strong>
+        <span>Inventory, invoices, and expenses look stable right now.</span>
+      </span>
+    </div>
+  `;
+}
+
+function handleAlertsPanelClick(event) {
+  const toggle = event.target.closest("[data-alert-toggle]");
+  if (toggle) {
+    alertsPanelExpanded = !alertsPanelExpanded;
+    localStorage.setItem("alnawaa_alerts_expanded", alertsPanelExpanded ? "true" : "false");
+    renderAlerts();
+    return;
+  }
+
+  const item = event.target.closest("[data-alert-target]");
+  if (!item) return;
+  const target = item.dataset.alertTarget;
+  if (target === "inventory" && item.dataset.alertFilter) {
+    inventoryFilter = item.dataset.alertFilter;
+  }
+  setView(target);
+  if (target === "inventory") {
+    document.querySelectorAll("[data-inventory-filter]").forEach((button) => {
+      button.classList.toggle("active", button.dataset.inventoryFilter === inventoryFilter);
+    });
+  }
 }
 
 function renderDashboard() {
@@ -946,32 +1107,33 @@ function renderDashboard() {
   const jumhouria = accountByName("Jumhouria Bank")?.currentBalance || 0;
 
   elements.metricGrid.innerHTML = [
-    ["Sales this month", formatMoney(totalSales), "Invoice revenue", "sales", "blue"],
-    ["Purchases this month", formatMoney(totalPurchases), "Supplier invoices", "purchases", "violet"],
-    ["Payments received", formatMoney(paymentsReceived), "Customer receipts", "money", "green"],
-    ["Supplier payments", formatMoney(supplierPayments), "Accounts payable paid", "accounting", "orange"],
-    ["Expenses this month", formatMoney(expenses), "Operating expenses", "expenses", "red"],
-    ["Salaries this month", formatMoney(salaries), "Payroll paid", "payroll", "pink"],
-    ["Withdrawals", formatMoney(withdrawals), "Owner/employee/cash withdrawals", "banking", "slate"],
-    ["Gross profit", formatMoney(grossProfit), "Sales - COGS", "profit", "green"],
-    ["Net profit estimate", formatMoney(netProfit), "Gross profit - expenses - salaries", "reports", "blue"],
-    ["Cashbox balance", formatMoney(cashbox), "Main cashbox", "money", "violet"],
-    ["Al Nouran Bank", formatMoney(alNouran), "Bank account", "banking", "teal"],
-    ["Jumhouria Bank", formatMoney(jumhouria), "Bank account", "banking", "teal"],
-    ["Customer receivables", formatMoney(receivables), "Open customer balances", "customers", "blue"],
-    ["Supplier payables", formatMoney(payables), "Open supplier balances", "suppliers", "green"],
+    ["Sales this month", formatMoney(totalSales), "Invoice revenue", "sales", "primary", "financial"],
+    ["Purchases this month", formatMoney(totalPurchases), "Supplier invoices", "purchases", "warning", "financial"],
+    ["Gross profit", formatMoney(grossProfit), "Sales - COGS", "profit", "positive", "profit"],
+    ["Net profit estimate", formatMoney(netProfit), "Gross profit - expenses - salaries", "reports", "primary", "profit"],
+    ["Payments received", formatMoney(paymentsReceived), "Customer receipts", "money", "positive", "payments"],
+    ["Supplier payments", formatMoney(supplierPayments), "Accounts payable paid", "accounting", "warning", "payments"],
+    ["Customer receivables", formatMoney(receivables), "Open customer balances", "customers", "primary", "payments"],
+    ["Supplier payables", formatMoney(payables), "Open supplier balances", "suppliers", "negative", "payments"],
+    ["Cashbox balance", formatMoney(cashbox), "Main cashbox", "money", "primary", "banking"],
+    ["Al Nouran Bank", formatMoney(alNouran), "Bank account", "banking", "primary", "banking"],
+    ["Jumhouria Bank", formatMoney(jumhouria), "Bank account", "banking", "primary", "banking"],
+    ["Withdrawals", formatMoney(withdrawals), "Owner/employee/cash withdrawals", "banking", "danger", "banking"],
+    ["Expenses this month", formatMoney(expenses), "Operating expenses", "expenses", "negative", "operating"],
+    ["Salaries this month", formatMoney(salaries), "Payroll paid", "payroll", "warning", "operating"],
   ]
-    .map(([label, value, detail, icon, tone]) => `
-      <article class="metric-card metric-${tone}">
-        <div>
-          <span>${escapeHtml(label)}</span>
-          <strong>${escapeHtml(String(value))}</strong>
-          <small>${escapeHtml(detail)}</small>
+    .map(([label, value, detail, icon, tone, group], index) => `
+      <article class="metric-card metric-${tone}" data-metric-group="${escapeHtml(group)}" style="--metric-index: ${index}">
+        <div class="metric-content">
+          <span class="metric-title">${escapeHtml(label)}</span>
+          <strong class="metric-value" aria-label="${escapeHtml(String(value))}">${metricValueMarkup(value)}</strong>
+          <small class="metric-detail">${escapeHtml(detail)}</small>
         </div>
         <span class="metric-icon">${iconSvg(icon)}</span>
       </article>
     `)
     .join("");
+  animateDashboardMetricCards();
 
   const alerts = state.medicines
     .filter((medicine) => medicine.stock <= medicine.reorderLevel || daysUntil(medicine.expiry) <= 120)
@@ -2792,6 +2954,70 @@ async function downloadBackup() {
   } catch (error) {
     toast(error.message);
   }
+}
+
+function openImportFilePicker() {
+  selectedImportFile = null;
+  elements.importBackupFile.value = "";
+  elements.importBackupFile.click();
+}
+
+function handleImportFileSelection(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  if (!file.name.toLowerCase().endsWith(".json")) {
+    elements.importBackupFile.value = "";
+    toast("Choose a .json backup file.");
+    return;
+  }
+  selectedImportFile = file;
+  elements.importFileName.textContent = file.name;
+  elements.importFileMeta.textContent = `${formatFileSize(file.size)} JSON backup selected.`;
+  elements.importDialog.showModal();
+}
+
+function closeImportDialog() {
+  selectedImportFile = null;
+  elements.importBackupFile.value = "";
+  elements.importDialog.close();
+}
+
+async function importSelectedBackup() {
+  if (!selectedImportFile) {
+    toast("Choose a .json backup file.");
+    return;
+  }
+  const button = document.getElementById("confirmImport");
+  button.disabled = true;
+  try {
+    const text = await selectedImportFile.text();
+    let backup;
+    try {
+      backup = JSON.parse(text);
+    } catch {
+      throw new Error("The selected file is not valid JSON.");
+    }
+    state = await api("/api/import", { method: "POST", body: { backup } });
+    const session = await api("/api/me");
+    currentUser = session.user;
+    document.getElementById("currentUserName").textContent = currentUser.name;
+    document.getElementById("currentUserRole").textContent = currentUser.role;
+    selectedImportFile = null;
+    elements.importBackupFile.value = "";
+    elements.importDialog.close();
+    render();
+    toast("Backup imported successfully.");
+  } catch (error) {
+    toast(error.message);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 async function resetSystemData() {

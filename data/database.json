@@ -10,10 +10,10 @@
     "companyAddress": "Tripoli - Ben Ashour Street",
     "companyAddressArabic": "طرابلس - شارع بن عاشور",
     "currency": "LYD",
-    "nextInvoice": 1002,
+    "nextInvoice": 1007,
     "nextDeliveryReceipt": 1001,
     "nextPaymentReceipt": 1001,
-    "nextSupplierPayment": 1001,
+    "nextSupplierPayment": 1003,
     "nextExpense": 1001,
     "nextTransfer": 1001
   },
@@ -34,95 +34,206 @@
   },
   "suppliers": [
     {
-      "id": "sup-ab1c4d54-7a5f-4981-8580-4ee632f524dd",
-      "name": "anhjjh",
+      "id": "sup-4bfe6dda-7686-4e89-955e-fce778df5180",
+      "name": "Anwar",
       "type": "Supplier",
-      "phone": "0202929872278",
-      "email": "",
+      "phone": "09277626146",
+      "email": "anwarnaas99@gmail.com",
       "address": "",
-      "createdAt": "2026-06-20T18:55:09.469Z"
+      "createdAt": "2026-07-01T16:18:22.755Z"
+    },
+    {
+      "id": "sup-c6013241-f431-47d8-82de-b4724cdfafc8",
+      "name": "Vitamina World & Supplemena",
+      "type": "Supplier",
+      "phone": "+491745873900",
+      "email": "Support@supplemena.com",
+      "address": "",
+      "createdAt": "2026-07-02T09:19:06.008Z"
     }
   ],
   "customers": [
     {
-      "id": "cus-83a0c13a-c68d-42d3-ac56-abebfa04c7ff",
-      "name": "anwar",
+      "id": "cus-7e7cbae5-c920-454b-a79e-16bf6ee6cacf",
+      "name": "شركة يشفين الحديثة",
       "type": "Customer",
-      "phone": "0927726146",
+      "phone": "0920926231",
       "email": "",
-      "address": "",
-      "createdAt": "2026-06-20T18:55:18.761Z"
+      "address": "تاجوراء",
+      "createdAt": "2026-07-02T09:25:58.887Z"
     }
   ],
   "medicines": [
     {
-      "id": "med-7af42734-1897-405f-a4d5-300453daa0a5",
-      "name": "panadol",
-      "sku": "msjs2200",
-      "category": "Analgesic",
-      "batch": "230029",
-      "productionDate": "2026-06-20",
-      "supplierId": "sup-ab1c4d54-7a5f-4981-8580-4ee632f524dd",
-      "location": "2",
-      "stock": 0,
-      "reorderLevel": 12,
-      "cost": 70,
-      "price": 150,
-      "expiry": "2027-06-20",
-      "createdAt": "2026-06-20T18:55:59.079Z"
+      "id": "med-df86b0ac-4c63-4640-beb4-3e0d19c9b919",
+      "name": "Fertilmas",
+      "sku": "4057935890011",
+      "category": "Vitamins",
+      "batch": "906492",
+      "productionDate": "2025-09-01",
+      "supplierId": "sup-c6013241-f431-47d8-82de-b4724cdfafc8",
+      "location": "",
+      "stock": 263,
+      "reorderLevel": 50,
+      "cost": 223.75,
+      "price": 455,
+      "expiry": "2027-09-01",
+      "createdAt": "2026-07-02T09:21:24.370Z"
+    },
+    {
+      "id": "med-fdce8083-b4ff-45de-9203-25c0ae924490",
+      "name": "ovulux",
+      "sku": "0634562833808",
+      "category": "Vitamins",
+      "batch": "906358",
+      "productionDate": "2025-09-01",
+      "supplierId": "sup-c6013241-f431-47d8-82de-b4724cdfafc8",
+      "location": "",
+      "stock": 768,
+      "reorderLevel": 100,
+      "cost": 213.25,
+      "price": 560,
+      "expiry": "2027-09-01",
+      "createdAt": "2026-07-02T09:22:43.036Z"
     }
   ],
-  "purchases": [],
+  "purchases": [
+    {
+      "id": "pur-4d923f62-6a3c-48c3-9b0a-945304a1e34d",
+      "invoiceNumber": "",
+      "date": "2026-05-15",
+      "supplierId": "sup-c6013241-f431-47d8-82de-b4724cdfafc8",
+      "medicineId": "med-df86b0ac-4c63-4640-beb4-3e0d19c9b919",
+      "quantity": 293,
+      "unitCost": 223.75,
+      "total": 65558.75,
+      "paidAmount": 65558.75,
+      "remainingBalance": 0,
+      "paymentStatus": "Paid",
+      "createdBy": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "createdAt": "2026-07-02T09:24:19.319Z"
+    },
+    {
+      "id": "pur-6edb5d96-43b3-4992-b0c9-bacd5668cf65",
+      "invoiceNumber": "",
+      "date": "2026-05-15",
+      "supplierId": "sup-c6013241-f431-47d8-82de-b4724cdfafc8",
+      "medicineId": "med-fdce8083-b4ff-45de-9203-25c0ae924490",
+      "quantity": 798,
+      "unitCost": 213.25,
+      "total": 170173.5,
+      "paidAmount": 170173.5,
+      "remainingBalance": 0,
+      "paymentStatus": "Paid",
+      "createdBy": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "createdAt": "2026-07-02T09:25:02.726Z"
+    }
+  ],
   "sales": [
     {
-      "id": "sale-84d90c06-e33e-460d-b65e-05747bf83e98",
-      "invoiceNumber": "INV-1001",
-      "date": "2026-06-20",
-      "customerId": "cus-83a0c13a-c68d-42d3-ac56-abebfa04c7ff",
+      "id": "sale-1882f31c-9047-4cfc-b74b-41a85c7bc42f",
+      "invoiceNumber": "INV-1006",
+      "date": "2026-07-02",
+      "customerId": "cus-7e7cbae5-c920-454b-a79e-16bf6ee6cacf",
       "items": [
         {
-          "medicineId": "med-7af42734-1897-405f-a4d5-300453daa0a5",
-          "name": "panadol",
-          "sku": "msjs2200",
-          "batch": "230029",
-          "productionDate": "2026-06-20",
-          "expiry": "2027-06-20",
-          "quantity": 20,
-          "unitPrice": 150,
-          "unitCost": 70,
-          "lineTotal": 3000
+          "medicineId": "med-df86b0ac-4c63-4640-beb4-3e0d19c9b919",
+          "name": "Fertilmas",
+          "sku": "4057935890011",
+          "batch": "906492",
+          "productionDate": "2025-09-01",
+          "expiry": "2027-09-01",
+          "quantity": 30,
+          "unitPrice": 455,
+          "unitCost": 223.75,
+          "lineTotal": 13650
         },
         {
-          "medicineId": "med-7af42734-1897-405f-a4d5-300453daa0a5",
-          "name": "panadol",
-          "sku": "msjs2200",
-          "batch": "230029",
-          "productionDate": "2026-06-20",
-          "expiry": "2027-06-20",
-          "quantity": 10,
-          "unitPrice": 150,
-          "unitCost": 70,
-          "lineTotal": 1500
+          "medicineId": "med-fdce8083-b4ff-45de-9203-25c0ae924490",
+          "name": "ovulux",
+          "sku": "0634562833808",
+          "batch": "906358",
+          "productionDate": "2025-09-01",
+          "expiry": "2027-09-01",
+          "quantity": 30,
+          "unitPrice": 560,
+          "unitCost": 213.25,
+          "lineTotal": 16800
         }
       ],
-      "total": 4500,
+      "bonusItems": [],
+      "total": 30450,
       "totalPaid": 0,
-      "remainingBalance": 4500,
+      "remainingBalance": 30450,
       "paymentStatus": "Unpaid",
       "deliveryStatus": "Ready",
       "notes": "",
       "paymentReceiptIds": [],
       "deliveryReceiptIds": [],
-      "createdBy": "usr-1",
-      "createdAt": "2026-06-20T18:57:35.796Z",
-      "updatedBy": "usr-1",
-      "updatedAt": "2026-07-01T14:08:03.291Z",
-      "bonusItems": []
+      "createdBy": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "createdAt": "2026-07-02T09:27:45.759Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "usr-6b54bfce-2b73-4ce5-8ce2-97e423f94cac",
+      "name": "Anwar naas",
+      "role": "Admin",
+      "email": "anwarnaas99@gmail.com",
+      "status": "Active"
+    },
+    {
+      "id": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "name": "admin",
+      "role": "Admin",
+      "email": "admin@alnawaaerp.com",
+      "status": "Active",
+      "salt": "4914b5ab8c5aaeba474ae8b4c1d60076",
+      "passwordHash": "65c5df03f77de6be870ff14922af4acf9f67393a50a20a58e18f991650e9e317"
     }
   ],
   "customerPayments": [],
   "deliveryReceipts": [],
-  "supplierPayments": [],
+  "supplierPayments": [
+    {
+      "id": "spay-973b9cfd-437e-4e86-bd50-f2204cffc042",
+      "voucherNumber": "SPV-1001",
+      "date": "2026-07-02",
+      "purchaseId": "pur-4d923f62-6a3c-48c3-9b0a-945304a1e34d",
+      "supplierId": "sup-c6013241-f431-47d8-82de-b4724cdfafc8",
+      "supplierName": "Vitamina World & Supplemena",
+      "amount": 65558.75,
+      "method": "Bank Transfer",
+      "bankAccountId": "acct-al-nouran",
+      "bankAccountName": "Al Nouran Bank",
+      "notes": "Initial purchase payment",
+      "paidBy": "admin",
+      "createdBy": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "createdAt": "2026-07-02T09:24:19.321Z",
+      "accountTransactionId": "txn-f72e7341-9f15-44d7-aa51-4db1fadfe3b7",
+      "totalPaidSoFar": 65558.75,
+      "remainingBalance": 0
+    },
+    {
+      "id": "spay-e378726b-db15-406f-b0fd-82a67dd2db01",
+      "voucherNumber": "SPV-1002",
+      "date": "2026-07-02",
+      "purchaseId": "pur-6edb5d96-43b3-4992-b0c9-bacd5668cf65",
+      "supplierId": "sup-c6013241-f431-47d8-82de-b4724cdfafc8",
+      "supplierName": "Vitamina World & Supplemena",
+      "amount": 170173.5,
+      "method": "Bank Transfer",
+      "bankAccountId": "acct-al-nouran",
+      "bankAccountName": "Al Nouran Bank",
+      "notes": "Initial purchase payment",
+      "paidBy": "admin",
+      "createdBy": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "createdAt": "2026-07-02T09:25:02.726Z",
+      "accountTransactionId": "txn-7e310fee-edfd-4891-9764-b7cc0c2285aa",
+      "totalPaidSoFar": 170173.5,
+      "remainingBalance": 0
+    }
+  ],
   "expenseCategories": [
     "Office rent",
     "Worker housing rent",
@@ -154,9 +265,9 @@
       "name": "Al Nouran Bank",
       "type": "Bank",
       "openingBalance": 0,
-      "currentBalance": 0,
+      "currentBalance": -235732.25,
       "totalDeposits": 0,
-      "totalWithdrawals": 0,
+      "totalWithdrawals": 235732.25,
       "active": true,
       "createdAt": "2026-06-19T15:57:30.983Z"
     },
@@ -172,20 +283,35 @@
       "createdAt": "2026-06-19T15:57:30.983Z"
     }
   ],
-  "accountTransactions": [],
-  "internalTransfers": [],
-  "users": [
+  "accountTransactions": [
     {
-      "id": "usr-1",
-      "name": "Omar Alnawaa",
-      "role": "Admin",
-      "email": "admin@alnawaaerp.com",
-      "status": "Active",
-      "salt": "4914b5ab8c5aaeba474ae8b4c1d60076",
-      "passwordHash": "65c5df03f77de6be870ff14922af4acf9f67393a50a20a58e18f991650e9e317",
-      "createdAt": "2026-06-19T15:57:31.020Z"
+      "id": "txn-f72e7341-9f15-44d7-aa51-4db1fadfe3b7",
+      "accountId": "acct-al-nouran",
+      "accountName": "Al Nouran Bank",
+      "date": "2026-07-02",
+      "type": "withdrawal",
+      "source": "supplier_payment",
+      "sourceId": "spay-973b9cfd-437e-4e86-bd50-f2204cffc042",
+      "description": "SPV-1001 Vitamina World & Supplemena",
+      "amount": -65558.75,
+      "createdBy": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "createdAt": "2026-07-02T09:24:19.321Z"
+    },
+    {
+      "id": "txn-7e310fee-edfd-4891-9764-b7cc0c2285aa",
+      "accountId": "acct-al-nouran",
+      "accountName": "Al Nouran Bank",
+      "date": "2026-07-02",
+      "type": "withdrawal",
+      "source": "supplier_payment",
+      "sourceId": "spay-e378726b-db15-406f-b0fd-82a67dd2db01",
+      "description": "SPV-1002 Vitamina World & Supplemena",
+      "amount": -170173.5,
+      "createdBy": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "createdAt": "2026-07-02T09:25:02.726Z"
     }
   ],
+  "internalTransfers": [],
   "auditLogs": [
     {
       "id": "log-2f9fa506-9bac-456b-9c21-6591d38ced71",
@@ -228,12 +354,340 @@
       "detail": "INV-1001 anwar"
     },
     {
-      "id": "log-34ddadc7-4333-4c73-bc3c-40ed0dc3ac3d",
-      "at": "2026-07-01T14:08:03.292Z",
+      "id": "log-14b7d31f-e92a-4b98-8b8d-248f001ac6f4",
+      "at": "2026-06-20T20:42:16.357Z",
       "userId": "usr-1",
       "userName": "Omar Alnawaa",
-      "action": "sale:update",
-      "detail": "INV-1001 anwar"
+      "action": "user:create",
+      "detail": "anwarnaas99@gmail.com"
+    },
+    {
+      "id": "log-d9febaeb-bfae-47c1-839e-b588d241bef6",
+      "at": "2026-06-20T20:42:47.257Z",
+      "userId": "usr-6b54bfce-2b73-4ce5-8ce2-97e423f94cac",
+      "userName": "Anwar naas",
+      "action": "user:delete",
+      "detail": "admin@alnawaaerp.com"
+    },
+    {
+      "id": "log-45c7abe5-984a-4f52-a88a-eeaf2601c344",
+      "at": "2026-06-20T21:41:30.730Z",
+      "userId": "usr-6b54bfce-2b73-4ce5-8ce2-97e423f94cac",
+      "userName": "Anwar naas",
+      "action": "user:create",
+      "detail": "emhemed.kosa@alnawaa.com"
+    },
+    {
+      "id": "log-8875df7e-0f40-4c53-b138-c21ea18550f3",
+      "at": "2026-06-20T21:43:39.333Z",
+      "userId": "usr-6b54bfce-2b73-4ce5-8ce2-97e423f94cac",
+      "userName": "Anwar naas",
+      "action": "user:delete",
+      "detail": "emhemed.kosa@alnawaa.com"
+    },
+    {
+      "id": "log-06e290a6-c4e7-4769-a6bc-5d324777c237",
+      "at": "2026-06-20T21:44:56.092Z",
+      "userId": "usr-6b54bfce-2b73-4ce5-8ce2-97e423f94cac",
+      "userName": "Anwar naas",
+      "action": "user:create",
+      "detail": "emhemed.kosa@alnawaa.com"
+    },
+    {
+      "id": "log-8794c939-cd5e-45d6-a674-73d27ffae2f9",
+      "at": "2026-06-20T21:46:40.714Z",
+      "userId": "usr-9b34d7c4-774d-4e42-ba49-b7853c242031",
+      "userName": "Emhemed kosa",
+      "action": "sale:delete",
+      "detail": "INV-1001"
+    },
+    {
+      "id": "log-bdcda075-abfb-4011-9786-e86a9a1c5aec",
+      "at": "2026-06-20T21:46:49.454Z",
+      "userId": "usr-9b34d7c4-774d-4e42-ba49-b7853c242031",
+      "userName": "Emhemed kosa",
+      "action": "customer:delete",
+      "detail": "anwar"
+    },
+    {
+      "id": "log-1893e7ad-833c-4af9-b532-46ca8df098eb",
+      "at": "2026-06-20T21:49:28.324Z",
+      "userId": "usr-9b34d7c4-774d-4e42-ba49-b7853c242031",
+      "userName": "Emhemed kosa",
+      "action": "medicine:delete",
+      "detail": "panadol 230029"
+    },
+    {
+      "id": "log-1bc67dd6-68bb-4d7d-b4a3-35c5465f9856",
+      "at": "2026-06-20T21:50:18.094Z",
+      "userId": "usr-9b34d7c4-774d-4e42-ba49-b7853c242031",
+      "userName": "Emhemed kosa",
+      "action": "customer:create",
+      "detail": "emhemd abdulmaged"
+    },
+    {
+      "id": "log-b743863c-ec81-448b-ad51-9169a2fff4a1",
+      "at": "2026-06-20T21:51:52.773Z",
+      "userId": "usr-9b34d7c4-774d-4e42-ba49-b7853c242031",
+      "userName": "Emhemed kosa",
+      "action": "medicine:create",
+      "detail": "merioferrt"
+    },
+    {
+      "id": "log-9c4da9c3-4a85-4556-a76d-c47e1597c02d",
+      "at": "2026-06-20T21:52:17.382Z",
+      "userId": "usr-9b34d7c4-774d-4e42-ba49-b7853c242031",
+      "userName": "Emhemed kosa",
+      "action": "sale:create",
+      "detail": "INV-1002 emhemd abdulmaged"
+    },
+    {
+      "id": "log-32ff53f3-9eb9-47aa-b478-b9b0657eae55",
+      "at": "2026-06-20T21:56:16.994Z",
+      "userId": "usr-9b34d7c4-774d-4e42-ba49-b7853c242031",
+      "userName": "Emhemed kosa",
+      "action": "sale:delete",
+      "detail": "INV-1002"
+    },
+    {
+      "id": "log-418bd71c-4db8-463b-adbb-f57fe6b08b4d",
+      "at": "2026-06-20T21:56:59.574Z",
+      "userId": "usr-9b34d7c4-774d-4e42-ba49-b7853c242031",
+      "userName": "Emhemed kosa",
+      "action": "sale:create",
+      "detail": "INV-1003 emhemd abdulmaged"
+    },
+    {
+      "id": "log-fadc3e0d-1de6-4cc5-9e18-2f13a3d67b9a",
+      "at": "2026-07-01T15:56:19.212Z",
+      "userId": "usr-6b54bfce-2b73-4ce5-8ce2-97e423f94cac",
+      "userName": "Anwar naas",
+      "action": "sale:delete",
+      "detail": "INV-1003"
+    },
+    {
+      "id": "log-bd7e0ba5-d92c-4fe2-9c41-e5418bd670ef",
+      "at": "2026-07-01T15:56:23.686Z",
+      "userId": "usr-6b54bfce-2b73-4ce5-8ce2-97e423f94cac",
+      "userName": "Anwar naas",
+      "action": "medicine:delete",
+      "detail": "merioferrt b-660-50"
+    },
+    {
+      "id": "log-6410761c-a326-4443-a787-c825cc0ad645",
+      "at": "2026-07-01T15:56:28.146Z",
+      "userId": "usr-6b54bfce-2b73-4ce5-8ce2-97e423f94cac",
+      "userName": "Anwar naas",
+      "action": "supplier:delete",
+      "detail": "anhjjh"
+    },
+    {
+      "id": "log-7b57c6cf-cd21-49ef-8251-4d96b81992a2",
+      "at": "2026-07-01T15:56:34.112Z",
+      "userId": "usr-6b54bfce-2b73-4ce5-8ce2-97e423f94cac",
+      "userName": "Anwar naas",
+      "action": "customer:delete",
+      "detail": "emhemd abdulmaged"
+    },
+    {
+      "id": "log-2855c7a1-f0de-4c2d-8f49-feb7afbc6245",
+      "at": "2026-07-01T16:18:22.755Z",
+      "userId": "usr-6b54bfce-2b73-4ce5-8ce2-97e423f94cac",
+      "userName": "Anwar naas",
+      "action": "supplier:create",
+      "detail": "Anwar"
+    },
+    {
+      "id": "log-d4062c21-d088-49ba-bbc0-7e6e7cd34b0a",
+      "at": "2026-07-01T16:18:50.552Z",
+      "userId": "usr-6b54bfce-2b73-4ce5-8ce2-97e423f94cac",
+      "userName": "Anwar naas",
+      "action": "medicine:create",
+      "detail": "anwar"
+    },
+    {
+      "id": "log-42cde653-68cf-48a5-9159-31a65124d3b7",
+      "at": "2026-07-01T16:19:12.885Z",
+      "userId": "usr-6b54bfce-2b73-4ce5-8ce2-97e423f94cac",
+      "userName": "Anwar naas",
+      "action": "customer:create",
+      "detail": "Anwar"
+    },
+    {
+      "id": "log-2d8ddde9-954d-4406-afe3-ee18e490f737",
+      "at": "2026-07-01T16:19:59.248Z",
+      "userId": "usr-6b54bfce-2b73-4ce5-8ce2-97e423f94cac",
+      "userName": "Anwar naas",
+      "action": "sale:create",
+      "detail": "INV-1004 Anwar"
+    },
+    {
+      "id": "log-f2e97b0f-f673-4f05-9328-5e5b98f1b7bb",
+      "at": "2026-07-01T16:42:27.040Z",
+      "userId": "usr-6b54bfce-2b73-4ce5-8ce2-97e423f94cac",
+      "userName": "Anwar naas",
+      "action": "user:create",
+      "detail": "admin@alnawaaerp.com"
+    },
+    {
+      "id": "log-e716b71f-50b8-49f5-a11b-bd1479dabee9",
+      "at": "2026-07-01T16:45:18.552Z",
+      "userId": "usr-6b54bfce-2b73-4ce5-8ce2-97e423f94cac",
+      "userName": "Anwar naas",
+      "action": "user:delete",
+      "detail": "emhemed.kosa@alnawaa.com"
+    },
+    {
+      "id": "log-5620d63e-43d1-44ed-90a6-fdfd52fc854e",
+      "at": "2026-07-01T16:46:25.537Z",
+      "userId": "usr-6b54bfce-2b73-4ce5-8ce2-97e423f94cac",
+      "userName": "Anwar naas",
+      "action": "medicine:update",
+      "detail": "anwar"
+    },
+    {
+      "id": "log-87385210-433c-4e5f-89d5-e9229a2e4818",
+      "at": "2026-07-01T17:32:40.898Z",
+      "userId": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "userName": "admin",
+      "action": "sale:delete",
+      "detail": "INV-1004"
+    },
+    {
+      "id": "log-4fbc734f-c27f-4a4a-96c8-ba527753b8ff",
+      "at": "2026-07-01T17:33:17.484Z",
+      "userId": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "userName": "admin",
+      "action": "sale:create",
+      "detail": "INV-1005 Anwar"
+    },
+    {
+      "id": "log-8ceff3e1-facb-4bb2-b636-4472b10e9fde",
+      "at": "2026-07-02T09:18:13.687Z",
+      "userId": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "userName": "admin",
+      "action": "sale:delete",
+      "detail": "INV-1005"
+    },
+    {
+      "id": "log-d0832577-e317-49a7-acc5-3364bc2436ca",
+      "at": "2026-07-02T09:19:06.008Z",
+      "userId": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "userName": "admin",
+      "action": "supplier:create",
+      "detail": "Vitamina World & Supplemena"
+    },
+    {
+      "id": "log-c94024b8-eccf-456d-ae69-30d4a9f55ccb",
+      "at": "2026-07-02T09:21:24.370Z",
+      "userId": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "userName": "admin",
+      "action": "medicine:create",
+      "detail": "Fertilmas"
+    },
+    {
+      "id": "log-5724bfb7-8785-4d18-90cd-87a6def2b02a",
+      "at": "2026-07-02T09:22:43.036Z",
+      "userId": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "userName": "admin",
+      "action": "medicine:create",
+      "detail": "Fertilmas"
+    },
+    {
+      "id": "log-14457fcd-e892-4e5c-98f3-611f8aac02d4",
+      "at": "2026-07-02T09:23:17.555Z",
+      "userId": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "userName": "admin",
+      "action": "medicine:update",
+      "detail": "ovulux"
+    },
+    {
+      "id": "log-4e7652f2-e399-435c-bbd4-e5d48485b7c8",
+      "at": "2026-07-02T09:24:19.322Z",
+      "userId": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "userName": "admin",
+      "action": "supplier-payment:create",
+      "detail": "SPV-1001"
+    },
+    {
+      "id": "log-8deb06a3-472a-404c-95d3-2e4bbc9836df",
+      "at": "2026-07-02T09:24:19.322Z",
+      "userId": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "userName": "admin",
+      "action": "purchase:create",
+      "detail": "Fertilmas x 293"
+    },
+    {
+      "id": "log-3acb58be-6cf6-4091-8fe5-5b0e93dd1dd6",
+      "at": "2026-07-02T09:25:02.726Z",
+      "userId": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "userName": "admin",
+      "action": "supplier-payment:create",
+      "detail": "SPV-1002"
+    },
+    {
+      "id": "log-3a5fea19-ee6e-4afd-88ed-ff0805f3a5bf",
+      "at": "2026-07-02T09:25:02.726Z",
+      "userId": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "userName": "admin",
+      "action": "purchase:create",
+      "detail": "ovulux x 798"
+    },
+    {
+      "id": "log-e25ef712-6f44-40d9-8005-7165d8a7f8e4",
+      "at": "2026-07-02T09:25:18.125Z",
+      "userId": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "userName": "admin",
+      "action": "medicine:delete",
+      "detail": "anwar cod"
+    },
+    {
+      "id": "log-29a6f947-b2e5-43e8-942d-cdf1bd2ac2bd",
+      "at": "2026-07-02T09:25:35.237Z",
+      "userId": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "userName": "admin",
+      "action": "customer:delete",
+      "detail": "Anwar"
+    },
+    {
+      "id": "log-dc9ab266-4181-4f52-8597-6a748b1ef588",
+      "at": "2026-07-02T09:25:58.887Z",
+      "userId": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "userName": "admin",
+      "action": "customer:create",
+      "detail": "شركة يشفين الحديثة"
+    },
+    {
+      "id": "log-b56b5711-397f-4ea2-98a0-e238c02f20b1",
+      "at": "2026-07-02T09:26:35.324Z",
+      "userId": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "userName": "admin",
+      "action": "medicine:update",
+      "detail": "Fertilmas"
+    },
+    {
+      "id": "log-d500bde7-34ce-4f5f-b860-d3c69ac47fc4",
+      "at": "2026-07-02T09:26:44.042Z",
+      "userId": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "userName": "admin",
+      "action": "medicine:update",
+      "detail": "ovulux"
+    },
+    {
+      "id": "log-28465055-83cc-4cb2-a203-70ed844e25f7",
+      "at": "2026-07-02T09:27:45.759Z",
+      "userId": "usr-104099d8-5c76-4e7e-bf28-8779236c71a8",
+      "userName": "admin",
+      "action": "sale:create",
+      "detail": "INV-1006 شركة يشفين الحديثة"
+    },
+    {
+      "id": "log-11885608-d9f3-4d86-8ce8-2743aeb6c6e9",
+      "at": "2026-07-07T06:57:35.485Z",
+      "userId": "usr-1",
+      "userName": "Omar Alnawaa",
+      "action": "backup:import",
+      "detail": "JSON backup restored"
     }
   ]
 }

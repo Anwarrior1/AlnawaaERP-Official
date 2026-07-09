@@ -62,6 +62,9 @@ const translations = {
     "Switch to Arabic": "التبديل إلى العربية",
     "Switch to light mode": "التبديل إلى الوضع الفاتح",
     "Switch to dark mode": "التبديل إلى الوضع الداكن",
+    "Open user menu": "فتح قائمة المستخدم",
+    "Change profile picture": "تغيير صورة الملف الشخصي",
+    "Settings/Profile": "الإعدادات / الملف الشخصي",
     Logout: "تسجيل الخروج",
     Cancel: "إلغاء",
     Enabled: "مفعل",
@@ -96,6 +99,7 @@ const iconPaths = {
   payroll: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle><path d="M16 11h4"></path>',
   banking: '<path d="M3 21h18"></path><path d="m4 10 8-6 8 6"></path><path d="M6 10v7"></path><path d="M10 10v7"></path><path d="M14 10v7"></path><path d="M18 10v7"></path>',
   settings: '<path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.39 1.1V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.39H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .39-1.1V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.14.37.36.7.6 1 .3.25.7.39 1.1.39H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z"></path>',
+  image: '<rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="m21 15-5-5L5 21"></path>',
   search: '<circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path>',
   money: '<path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"></path>',
   profit: '<path d="M3 17 9 11l4 4 8-8"></path><path d="M14 7h7v7"></path>',
@@ -198,9 +202,12 @@ document.addEventListener("DOMContentLoaded", () => {
 function decorateNavigation() {
   document.querySelectorAll(".nav-item").forEach((button) => {
     const label = button.dataset.label || button.textContent.trim();
+    const translatedLabel = t(label);
     button.dataset.label = label;
-    const iconName = button.dataset.view || "dashboard";
-    button.innerHTML = `<span class="nav-icon">${iconSvg(iconName)}</span><span>${escapeHtml(t(label))}</span>`;
+    button.setAttribute("aria-label", translatedLabel);
+    button.dataset.tooltip = translatedLabel;
+    const iconName = button.dataset.icon || button.dataset.view || "dashboard";
+    button.innerHTML = `<span class="nav-icon">${iconSvg(iconName)}</span><span class="nav-tooltip" role="tooltip">${escapeHtml(translatedLabel)}</span>`;
   });
 }
 
@@ -209,6 +216,7 @@ function applyLanguage() {
   document.documentElement.dir = currentLanguage === "ar" ? "rtl" : "ltr";
   document.body.classList.toggle("rtl", currentLanguage === "ar");
   renderTopbarActions();
+  renderUserMenu();
   translateStaticText();
   decorateNavigation();
 }
@@ -228,7 +236,6 @@ function renderTopbarActions() {
     ["importData", "upload", "Import backup"],
     ["languageToggle", "globe", currentLanguage === "ar" ? "Switch to English" : "Switch to Arabic"],
     ["themeToggle", currentTheme === "dark" ? "sun" : "moon", currentTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"],
-    ["logoutButton", "logout", "Logout"],
   ];
   for (const [id, icon, label] of actions) {
     const button = document.getElementById(id);
@@ -237,6 +244,110 @@ function renderTopbarActions() {
     button.title = t(label);
     button.setAttribute("aria-label", t(label));
   }
+}
+
+function renderUserMenu() {
+  const name = currentUser?.name || "User";
+  const role = currentUser?.role || "Role";
+  const avatar = document.getElementById("userAvatar");
+  const button = document.getElementById("userMenuButton");
+  const changePhotoIcon = document.getElementById("userMenuChangePhotoIcon");
+  const settingsIcon = document.getElementById("userMenuSettingsIcon");
+  const logoutIcon = document.getElementById("userMenuLogoutIcon");
+  const changePhotoLabel = document.getElementById("userMenuChangePhotoLabel");
+  const settingsLabel = document.getElementById("userMenuSettingsLabel");
+  const logoutLabel = document.getElementById("userMenuLogoutLabel");
+  document.getElementById("currentUserName").textContent = name;
+  document.getElementById("currentUserRole").textContent = role;
+  if (button) button.setAttribute("aria-label", t("Open user menu"));
+  if (changePhotoIcon) changePhotoIcon.innerHTML = iconSvg("image");
+  if (settingsIcon) settingsIcon.innerHTML = iconSvg("settings");
+  if (logoutIcon) logoutIcon.innerHTML = iconSvg("logout");
+  if (changePhotoLabel) changePhotoLabel.textContent = t("Change profile picture");
+  if (settingsLabel) settingsLabel.textContent = t("Settings/Profile");
+  if (logoutLabel) logoutLabel.textContent = t("Logout");
+  if (!avatar) return;
+  const image = storedProfileImage() || currentUser?.profileImage || currentUser?.avatarUrl || currentUser?.imageUrl;
+  avatar.innerHTML = image
+    ? `<img src="${escapeHtml(image)}" alt="">`
+    : iconSvg("user");
+}
+
+function profileImageStorageKey() {
+  const id = currentUser?.id || currentUser?.email;
+  return id ? `alnawaa_profile_image_${id}` : "";
+}
+
+function storedProfileImage() {
+  const key = profileImageStorageKey();
+  return key ? localStorage.getItem(key) : "";
+}
+
+function saveStoredProfileImage(image) {
+  const key = profileImageStorageKey();
+  if (key) localStorage.setItem(key, image);
+}
+
+function readImageFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Could not read the selected image."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function imageFromSource(source) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("The selected file is not a valid image."));
+    image.src = source;
+  });
+}
+
+function resizeProfileImage(image) {
+  const canvas = document.createElement("canvas");
+  const size = 256;
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext("2d");
+  const crop = Math.min(image.naturalWidth, image.naturalHeight);
+  const x = (image.naturalWidth - crop) / 2;
+  const y = (image.naturalHeight - crop) / 2;
+  context.drawImage(image, x, y, crop, crop, 0, 0, size, size);
+  return canvas.toDataURL("image/jpeg", 0.86);
+}
+
+async function handleProfileImageSelection(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    toast("Choose an image file.");
+    event.target.value = "";
+    return;
+  }
+  try {
+    const source = await readImageFile(file);
+    const image = await imageFromSource(source);
+    saveStoredProfileImage(resizeProfileImage(image));
+    renderUserMenu();
+    setUserMenuOpen(false);
+    toast("Profile picture updated.");
+  } catch (error) {
+    toast(error.message);
+  } finally {
+    event.target.value = "";
+  }
+}
+
+function setUserMenuOpen(open) {
+  const menu = document.getElementById("userMenu");
+  const button = document.getElementById("userMenuButton");
+  const dropdown = document.getElementById("userMenuDropdown");
+  menu?.classList.toggle("open", open);
+  button?.setAttribute("aria-expanded", open ? "true" : "false");
+  dropdown?.setAttribute("aria-hidden", open ? "false" : "true");
 }
 
 function translateStaticText() {
@@ -346,7 +457,30 @@ function metricValueMarkup(value) {
 
 function bindBaseEvents() {
   elements.loginForm.addEventListener("submit", login);
-  document.getElementById("logoutButton").addEventListener("click", logout);
+  document.getElementById("sidebarLogoutButton")?.addEventListener("click", logout);
+  document.getElementById("userMenuButton")?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const menu = document.getElementById("userMenu");
+    setUserMenuOpen(!menu?.classList.contains("open"));
+  });
+  document.getElementById("userMenuChangePhoto")?.addEventListener("click", () => {
+    document.getElementById("profileImageInput")?.click();
+  });
+  document.getElementById("profileImageInput")?.addEventListener("change", handleProfileImageSelection);
+  document.getElementById("userMenuSettings")?.addEventListener("click", () => {
+    setUserMenuOpen(false);
+    setView("settings");
+  });
+  document.getElementById("userMenuLogout")?.addEventListener("click", () => {
+    setUserMenuOpen(false);
+    logout();
+  });
+  document.addEventListener("click", (event) => {
+    if (!document.getElementById("userMenu")?.contains(event.target)) setUserMenuOpen(false);
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") setUserMenuOpen(false);
+  });
   document.getElementById("languageToggle").addEventListener("click", toggleLanguage);
   document.getElementById("themeToggle").addEventListener("click", toggleTheme);
   document.getElementById("exportData").addEventListener("click", downloadBackup);
@@ -482,8 +616,7 @@ async function loadApp() {
   state = await api("/api/bootstrap");
   elements.loginScreen.classList.add("hidden");
   elements.appShell.classList.remove("hidden");
-  document.getElementById("currentUserName").textContent = currentUser.name;
-  document.getElementById("currentUserRole").textContent = currentUser.role;
+  renderUserMenu();
   fillAccountForm();
   hydrateSelects();
   setDefaultFormValues();
@@ -1881,8 +2014,7 @@ async function saveAccount(event) {
   try {
     const response = await api("/api/me/account", { method: "PATCH", body: payload });
     currentUser = response.user;
-    document.getElementById("currentUserName").textContent = currentUser.name;
-    document.getElementById("currentUserRole").textContent = currentUser.role;
+    renderUserMenu();
     await reloadData();
     fillAccountForm();
     toast("Account updated.");
@@ -3000,8 +3132,7 @@ async function importSelectedBackup() {
     state = await api("/api/import", { method: "POST", body: { backup } });
     const session = await api("/api/me");
     currentUser = session.user;
-    document.getElementById("currentUserName").textContent = currentUser.name;
-    document.getElementById("currentUserRole").textContent = currentUser.role;
+    renderUserMenu();
     selectedImportFile = null;
     elements.importBackupFile.value = "";
     elements.importDialog.close();

@@ -41,7 +41,7 @@
           </div>
         </div>
 
-        <nav class="nav-list">
+        <nav class="nav-list" aria-label="Primary ERP sections">
           <button class="nav-item active" type="button" data-view="dashboard">Dashboard</button>
           <button class="nav-item" type="button" data-view="inventory">Inventory</button>
           <button class="nav-item" type="button" data-view="sales">Sales</button>
@@ -55,13 +55,13 @@
           <button class="nav-item" type="button" data-view="expenses">Expenses</button>
           <button class="nav-item" type="button" data-view="payroll">Payroll</button>
           <button class="nav-item" type="button" data-view="banking">Banking</button>
-          <button class="nav-item" type="button" data-view="settings">Settings</button>
         </nav>
 
-        <div class="sidebar-footer">
-          <span class="status-dot"></span>
-          <span>Server-backed data</span>
-        </div>
+        <nav class="sidebar-actions" aria-label="Secondary ERP actions">
+          <button class="nav-item" type="button" data-view="settings">Settings</button>
+          <button class="sidebar-action-button" id="themeToggle" type="button" title="Toggle theme" aria-label="Toggle theme"></button>
+          <button class="nav-item sidebar-logout" id="sidebarLogoutButton" type="button" data-icon="logout">Logout</button>
+        </nav>
       </aside>
 
       <main class="workspace">
@@ -80,13 +80,31 @@
               <button class="icon-button topbar-action" id="importData" type="button" title="Import backup" aria-label="Import backup"></button>
               <input class="hidden" id="importBackupFile" type="file" accept=".json,application/json">
               <button class="icon-button topbar-action" id="languageToggle" type="button" title="Switch language" aria-label="Switch language"></button>
-              <button class="icon-button topbar-action" id="themeToggle" type="button" title="Toggle theme" aria-label="Toggle theme"></button>
             </div>
-            <div class="user-chip">
-              <strong id="currentUserName">User</strong>
-              <span id="currentUserRole">Role</span>
+            <div class="user-menu" id="userMenu">
+              <button class="user-avatar-button" id="userMenuButton" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Open user menu">
+                <span class="user-avatar" id="userAvatar"></span>
+              </button>
+              <div class="user-menu-dropdown" id="userMenuDropdown" role="menu" aria-labelledby="userMenuButton" aria-hidden="true">
+                <div class="user-menu-header">
+                  <strong id="currentUserName">User</strong>
+                  <span id="currentUserRole">Role</span>
+                </div>
+                <input class="hidden" id="profileImageInput" type="file" accept="image/*">
+                <button class="user-menu-item" id="userMenuChangePhoto" type="button" role="menuitem">
+                  <span class="user-menu-icon" id="userMenuChangePhotoIcon" aria-hidden="true"></span>
+                  <span id="userMenuChangePhotoLabel">Change profile picture</span>
+                </button>
+                <button class="user-menu-item" id="userMenuSettings" type="button" role="menuitem">
+                  <span class="user-menu-icon" id="userMenuSettingsIcon" aria-hidden="true"></span>
+                  <span id="userMenuSettingsLabel">Settings/Profile</span>
+                </button>
+                <button class="user-menu-item" id="userMenuLogout" type="button" role="menuitem">
+                  <span class="user-menu-icon" id="userMenuLogoutIcon" aria-hidden="true"></span>
+                  <span id="userMenuLogoutLabel">Logout</span>
+                </button>
+              </div>
             </div>
-            <button class="icon-button topbar-action" id="logoutButton" type="button" title="Logout" aria-label="Logout"></button>
           </div>
         </header>
 

@@ -67,3 +67,7 @@ The database starts blank: no sample medicines, suppliers, customers, purchases,
 ## Public Deployment Note
 
 This is ready as a local official build. Before using it as a real public business system, move the database to PostgreSQL or MySQL, enable HTTPS, configure backups, use real domain hosting, and review medicine-business compliance and security requirements.
+
+## PostgreSQL Migration
+
+Use `MIGRATION.md` for the VPS migration commands and `BACKUP.md` for backup, restore, and rollback instructions. The original JSON files remain supported as a fallback until PostgreSQL import validation is completed.

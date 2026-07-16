@@ -1,0 +1,534 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  Admin
+  Manager
+  Pharmacist
+  Sales
+  Accountant
+}
+
+enum UserStatus {
+  Active
+  Suspended
+}
+
+enum PaymentStatus {
+  Unpaid
+  PartiallyPaid @map("Partially Paid")
+  Paid
+}
+
+enum DeliveryStatus {
+  Ready
+  Scheduled
+  Delivered
+}
+
+enum AccountType {
+  Cashbox
+  Bank
+}
+
+enum TransactionType {
+  deposit
+  withdrawal
+}
+
+enum SaleItemKind {
+  NORMAL
+  BONUS
+}
+
+model CompanySettings {
+  id                   String   @id @default("default")
+  schemaVersion        Int      @default(2)
+  companyName          String
+  companySubtitle      String?
+  companyDetails       String?
+  companyPhone         String?
+  companyPhoneAlt      String?
+  companyEmail         String?
+  companyAddress       String?
+  companyAddressArabic String?
+  currency             String   @default("LYD")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model NumberSequence {
+  key       String @id
+  nextValue Int
+}
+
+model ModuleSetting {
+  key     String  @id
+  enabled Boolean @default(true)
+}
+
+model HiddenFeature {
+  role       UserRole
+  featureKey String
+
+  @@id([role, featureKey])
+}
+
+model ExpenseCategory {
+  name      String    @id
+  sortOrder Int       @default(0)
+  expenses  Expense[]
+  createdAt DateTime  @default(now())
+}
+
+model Supplier {
+  id               String            @id
+  sortOrder        Int               @default(0)
+  name             String
+  type             String            @default("Supplier")
+  phone            String
+  email            String?
+  address          String?
+  createdAt        DateTime
+  medicines        Medicine[]
+  purchases        Purchase[]
+  supplierPayments SupplierPayment[]
+}
+
+model Customer {
+  id               String            @id
+  sortOrder        Int               @default(0)
+  name             String
+  type             String            @default("Customer")
+  phone            String
+  email            String?
+  address          String?
+  createdAt        DateTime
+  sales            Sale[]
+  customerPayments CustomerPayment[]
+  deliveryReceipts DeliveryReceipt[]
+}
+
+model Medicine {
+  id             String                @id
+  sortOrder      Int                   @default(0)
+  name           String
+  sku            String
+  category       String
+  batch          String
+  productionDate DateTime?             @db.Date
+  supplierId     String
+  supplier       Supplier              @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  location       String?
+  stock          Int                   @default(0)
+  reorderLevel   Int                   @default(0)
+  cost           Decimal               @db.Decimal(14, 3)
+  price          Decimal               @db.Decimal(14, 3)
+  expiry         DateTime?             @db.Date
+  createdAt      DateTime
+  purchases      Purchase[]
+  saleItems      SaleItem[]
+  deliveryItems  DeliveryReceiptItem[]
+
+  @@index([supplierId])
+  @@index([sku])
+  @@index([batch])
+  @@index([expiry])
+}
+
+model User {
+  id                  String               @id
+  sortOrder           Int                  @default(0)
+  name                String
+  role                UserRole
+  email               String               @unique
+  status              UserStatus           @default(Active)
+  salt                String?
+  passwordHash        String?
+  createdAt           DateTime?
+  purchasesCreated    Purchase[]           @relation("PurchaseCreatedBy")
+  salesCreated        Sale[]               @relation("SaleCreatedBy")
+  customerPayments    CustomerPayment[]    @relation("CustomerPaymentCreatedBy")
+  supplierPayments    SupplierPayment[]    @relation("SupplierPaymentCreatedBy")
+  expensesCreated     Expense[]            @relation("ExpenseCreatedBy")
+  salariesCreated     SalaryPayment[]      @relation("SalaryCreatedBy")
+  withdrawalsCreated  Withdrawal[]         @relation("WithdrawalCreatedBy")
+  transfersCreated    InternalTransfer[]   @relation("TransferCreatedBy")
+  transactionsCreated AccountTransaction[] @relation("TransactionCreatedBy")
+  auditLogs           AuditLog[]
+}
+
+model Purchase {
+  id               String            @id
+  sortOrder        Int               @default(0)
+  invoiceNumber    String?
+  date             DateTime          @db.Date
+  supplierId       String
+  supplier         Supplier          @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  medicineId       String
+  medicine         Medicine          @relation(fields: [medicineId], references: [id], onDelete: Restrict)
+  quantity         Int
+  unitCost         Decimal           @db.Decimal(14, 3)
+  total            Decimal           @db.Decimal(14, 3)
+  paidAmount       Decimal           @db.Decimal(14, 3)
+  remainingBalance Decimal           @db.Decimal(14, 3)
+  paymentStatus    PaymentStatus
+  createdById      String?
+  createdBy        User?             @relation("PurchaseCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt        DateTime
+  supplierPayments SupplierPayment[]
+
+  @@index([supplierId])
+  @@index([medicineId])
+  @@index([date])
+}
+
+model Sale {
+  id               String            @id
+  sortOrder        Int               @default(0)
+  invoiceNumber    String            @unique
+  date             DateTime          @db.Date
+  customerId       String
+  customer         Customer          @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  total            Decimal           @db.Decimal(14, 3)
+  totalPaid        Decimal           @db.Decimal(14, 3)
+  remainingBalance Decimal           @db.Decimal(14, 3)
+  paymentStatus    PaymentStatus
+  deliveryStatus   DeliveryStatus
+  notes            String?
+  createdById      String?
+  createdBy        User?             @relation("SaleCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt        DateTime
+  updatedById      String?
+  updatedAt        DateTime?
+  items            SaleItem[]
+  payments         CustomerPayment[]
+  deliveryReceipts DeliveryReceipt[]
+
+  @@index([customerId])
+  @@index([date])
+}
+
+model SaleItem {
+  id             String       @id
+  saleId         String
+  sale           Sale         @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  lineNo         Int
+  kind           SaleItemKind
+  medicineId     String
+  medicine       Medicine     @relation(fields: [medicineId], references: [id], onDelete: Restrict)
+  name           String
+  sku            String?
+  batch          String?
+  productionDate DateTime?    @db.Date
+  expiry         DateTime?    @db.Date
+  quantity       Int
+  unitPrice      Decimal      @db.Decimal(14, 3)
+  unitCost       Decimal      @db.Decimal(14, 3)
+  lineTotal      Decimal      @db.Decimal(14, 3)
+
+  @@unique([saleId, kind, lineNo])
+  @@index([medicineId])
+}
+
+model CustomerPayment {
+  id                   String              @id
+  sortOrder            Int                 @default(0)
+  receiptNumber        String              @unique
+  date                 DateTime            @db.Date
+  saleId               String
+  sale                 Sale                @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  customerId           String
+  customer             Customer            @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  invoiceNumber        String
+  invoiceTotal         Decimal             @db.Decimal(14, 3)
+  amount               Decimal             @db.Decimal(14, 3)
+  method               String
+  bankAccountId        String
+  bankAccount          BankAccount         @relation("CustomerPaymentAccount", fields: [bankAccountId], references: [id], onDelete: Restrict)
+  bankAccountName      String
+  notes                String?
+  receivedBy           String?
+  createdById          String?
+  createdBy            User?               @relation("CustomerPaymentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt            DateTime
+  totalPaidSoFar       Decimal?            @db.Decimal(14, 3)
+  remainingBalance     Decimal?            @db.Decimal(14, 3)
+  accountTransactionId String?             @unique
+  accountTransaction   AccountTransaction? @relation("CustomerPaymentTransaction", fields: [accountTransactionId], references: [id], onDelete: SetNull)
+
+  @@index([saleId])
+  @@index([customerId])
+  @@index([bankAccountId])
+}
+
+model DeliveryReceipt {
+  id             String                @id
+  sortOrder      Int                   @default(0)
+  receiptNumber  String                @unique
+  saleId         String
+  sale           Sale                  @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  invoiceNumber  String
+  date           DateTime              @db.Date
+  customerId     String
+  customer       Customer              @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  customerName   String
+  customerType   String?
+  receiverName   String?
+  receiverPhone  String?
+  deliveryPerson String?
+  notes          String?
+  total          Decimal               @db.Decimal(14, 3)
+  createdById    String?
+  createdAt      DateTime
+  items          DeliveryReceiptItem[]
+
+  @@index([saleId])
+  @@index([customerId])
+}
+
+model DeliveryReceiptItem {
+  id                String          @id
+  deliveryReceiptId String
+  deliveryReceipt   DeliveryReceipt @relation(fields: [deliveryReceiptId], references: [id], onDelete: Cascade)
+  lineNo            Int
+  kind              SaleItemKind
+  medicineId        String?
+  medicine          Medicine?       @relation(fields: [medicineId], references: [id], onDelete: SetNull)
+  name              String
+  batch             String?
+  expiry            DateTime?       @db.Date
+  quantity          Int
+
+  @@unique([deliveryReceiptId, kind, lineNo])
+  @@index([medicineId])
+}
+
+model SupplierPayment {
+  id                   String              @id
+  sortOrder            Int                 @default(0)
+  voucherNumber        String              @unique
+  date                 DateTime            @db.Date
+  purchaseId           String
+  purchase             Purchase            @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  supplierId           String
+  supplier             Supplier            @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  supplierName         String
+  amount               Decimal             @db.Decimal(14, 3)
+  method               String
+  bankAccountId        String
+  bankAccount          BankAccount         @relation("SupplierPaymentAccount", fields: [bankAccountId], references: [id], onDelete: Restrict)
+  bankAccountName      String
+  notes                String?
+  paidBy               String?
+  createdById          String?
+  createdBy            User?               @relation("SupplierPaymentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt            DateTime
+  totalPaidSoFar       Decimal?            @db.Decimal(14, 3)
+  remainingBalance     Decimal?            @db.Decimal(14, 3)
+  accountTransactionId String?             @unique
+  accountTransaction   AccountTransaction? @relation("SupplierPaymentTransaction", fields: [accountTransactionId], references: [id], onDelete: SetNull)
+
+  @@index([purchaseId])
+  @@index([supplierId])
+  @@index([bankAccountId])
+}
+
+model Expense {
+  id                   String              @id
+  sortOrder            Int                 @default(0)
+  expenseNumber        String              @unique
+  date                 DateTime            @db.Date
+  categoryName         String
+  category             ExpenseCategory     @relation(fields: [categoryName], references: [name], onDelete: Restrict)
+  amount               Decimal             @db.Decimal(14, 3)
+  method               String
+  paidFromAccountId    String
+  paidFromAccount      BankAccount         @relation("ExpensePaidFromAccount", fields: [paidFromAccountId], references: [id], onDelete: Restrict)
+  paidFromAccountName  String
+  notes                String?
+  attachmentName       String?
+  source               String              @default("expense")
+  createdById          String?
+  createdBy            User?               @relation("ExpenseCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdByName        String?
+  createdAt            DateTime
+  accountTransactionId String?             @unique
+  accountTransaction   AccountTransaction? @relation("ExpenseTransaction", fields: [accountTransactionId], references: [id], onDelete: SetNull)
+  salaryPayment        SalaryPayment?
+
+  @@index([categoryName])
+  @@index([paidFromAccountId])
+  @@index([date])
+}
+
+model SalaryPayment {
+  id                  String      @id
+  sortOrder           Int         @default(0)
+  date                DateTime    @db.Date
+  employeeName        String
+  month               String
+  baseSalary          Decimal     @db.Decimal(14, 3)
+  deductions          Decimal     @db.Decimal(14, 3)
+  bonuses             Decimal     @db.Decimal(14, 3)
+  advances            Decimal     @db.Decimal(14, 3)
+  netPaidAmount       Decimal     @db.Decimal(14, 3)
+  method              String
+  paidFromAccountId   String
+  paidFromAccount     BankAccount @relation("SalaryPaidFromAccount", fields: [paidFromAccountId], references: [id], onDelete: Restrict)
+  paidFromAccountName String
+  notes               String?
+  createdById         String?
+  createdBy           User?       @relation("SalaryCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt           DateTime
+  expenseId           String?     @unique
+  expense             Expense?    @relation(fields: [expenseId], references: [id], onDelete: SetNull)
+
+  @@index([paidFromAccountId])
+  @@index([date])
+  @@index([month])
+}
+
+model Withdrawal {
+  id                   String              @id
+  sortOrder            Int                 @default(0)
+  date                 DateTime            @db.Date
+  type                 String
+  amount               Decimal             @db.Decimal(14, 3)
+  withdrawnBy          String
+  accountId            String
+  account              BankAccount         @relation("WithdrawalAccount", fields: [accountId], references: [id], onDelete: Restrict)
+  accountName          String
+  reason               String?
+  notes                String?
+  createdById          String?
+  createdBy            User?               @relation("WithdrawalCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt            DateTime
+  accountTransactionId String?             @unique
+  accountTransaction   AccountTransaction? @relation("WithdrawalTransaction", fields: [accountTransactionId], references: [id], onDelete: SetNull)
+
+  @@index([accountId])
+  @@index([date])
+}
+
+model BankAccount {
+  id                        String               @id
+  sortOrder                 Int                  @default(0)
+  name                      String
+  type                      AccountType
+  openingBalance            Decimal              @db.Decimal(14, 3)
+  currentBalance            Decimal              @db.Decimal(14, 3)
+  totalDeposits             Decimal              @db.Decimal(14, 3)
+  totalWithdrawals          Decimal              @db.Decimal(14, 3)
+  active                    Boolean              @default(true)
+  createdAt                 DateTime
+  transactions              AccountTransaction[]
+  customerPayments          CustomerPayment[]    @relation("CustomerPaymentAccount")
+  supplierPayments          SupplierPayment[]    @relation("SupplierPaymentAccount")
+  expenses                  Expense[]            @relation("ExpensePaidFromAccount")
+  salaryPayments            SalaryPayment[]      @relation("SalaryPaidFromAccount")
+  withdrawals               Withdrawal[]         @relation("WithdrawalAccount")
+  outgoingInternalTransfers InternalTransfer[]   @relation("InternalTransferFromAccount")
+  incomingInternalTransfers InternalTransfer[]   @relation("InternalTransferToAccount")
+}
+
+model AccountTransaction {
+  id              String            @id
+  sortOrder       Int               @default(0)
+  accountId       String
+  account         BankAccount       @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  accountName     String
+  date            DateTime          @db.Date
+  type            TransactionType
+  source          String
+  sourceId        String
+  description     String
+  amount          Decimal           @db.Decimal(14, 3)
+  reversed        Boolean           @default(false)
+  createdById     String?
+  createdBy       User?             @relation("TransactionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt       DateTime
+  customerPayment CustomerPayment?  @relation("CustomerPaymentTransaction")
+  supplierPayment SupplierPayment?  @relation("SupplierPaymentTransaction")
+  expense         Expense?          @relation("ExpenseTransaction")
+  withdrawal      Withdrawal?       @relation("WithdrawalTransaction")
+  transferOut     InternalTransfer? @relation("InternalTransferOutTransaction")
+  transferIn      InternalTransfer? @relation("InternalTransferInTransaction")
+
+  @@index([accountId])
+  @@index([source, sourceId])
+  @@index([date])
+}
+
+model InternalTransfer {
+  id               String              @id
+  sortOrder        Int                 @default(0)
+  transferNumber   String              @unique
+  date             DateTime            @db.Date
+  fromAccountId    String
+  fromAccount      BankAccount         @relation("InternalTransferFromAccount", fields: [fromAccountId], references: [id], onDelete: Restrict)
+  fromAccountName  String
+  toAccountId      String
+  toAccount        BankAccount         @relation("InternalTransferToAccount", fields: [toAccountId], references: [id], onDelete: Restrict)
+  toAccountName    String
+  amount           Decimal             @db.Decimal(14, 3)
+  notes            String?
+  createdById      String?
+  createdBy        User?               @relation("TransferCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt        DateTime
+  outTransactionId String?             @unique
+  outTransaction   AccountTransaction? @relation("InternalTransferOutTransaction", fields: [outTransactionId], references: [id], onDelete: SetNull)
+  inTransactionId  String?             @unique
+  inTransaction    AccountTransaction? @relation("InternalTransferInTransaction", fields: [inTransactionId], references: [id], onDelete: SetNull)
+
+  @@index([fromAccountId])
+  @@index([toAccountId])
+  @@index([date])
+}
+
+model AuditLog {
+  id        String   @id
+  sortOrder Int      @default(0)
+  at        DateTime
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userName  String?
+  action    String
+  detail    String?
+
+  @@index([userId])
+  @@index([at])
+}
+
+model JsonBackupSnapshot {
+  id           String   @id @default(cuid())
+  sourcePath   String   @unique
+  sha256       String   @unique
+  recordCounts Json
+  rawJson      Json
+  capturedAt   DateTime @default(now())
+}
+
+model ImportBatch {
+  id           String   @id @default(cuid())
+  sourceFile   String
+  sha256       String   @unique
+  importedAt   DateTime @default(now())
+  recordCounts Json
+  rawJson      Json
+  notes        String?
+}
+
+model MigrationState {
+  key       String   @id
+  active    Boolean  @default(false)
+  value     Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -1,0 +1,23 @@
+{
+  "name": "alnawaa-erp-official",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AlnawaaERP Official server with PostgreSQL migration support.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy",
+    "prisma:dev": "prisma migrate dev",
+    "db:import": "node scripts/import-json-to-postgres.js",
+    "db:validate": "node scripts/validate-postgres-import.js",
+    "storage:health": "node scripts/storage-health.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.2.1",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "prisma": "^6.2.1"
+  }
+}

@@ -2,6 +2,10 @@ const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
+require("dotenv").config();
+
+const { getPrisma } = require("./lib/prisma");
+const { createPostgresStore } = require("./lib/postgres-store");
 
 const PORT = Number(process.env.PORT || 4280);
 const HOST = process.env.HOST || "127.0.0.1";
@@ -12,6 +16,7 @@ const DB_PATH = path.join(DATA_DIR, "database.json");
 const SESSION_COOKIE = "alnawaa_session";
 const CURRENT_SCHEMA_VERSION = 2;
 const sessions = new Map();
+let activeStorage = { kind: "json" };
 
 const permissionsByRole = {
   Admin: ["all"],
@@ -89,7 +94,7 @@ const mimeTypes = {
   ".jpeg": "image/jpeg",
 };
 
-let db = loadDatabase();
+let db = null;
 
 const server = http.createServer((request, response) => {
   handleRequest(request, response).catch((error) => {
@@ -102,11 +107,20 @@ const server = http.createServer((request, response) => {
   });
 });
 
-server.listen(PORT, HOST, () => {
-  const displayHost = HOST === "0.0.0.0" ? "localhost" : HOST;
-  console.log(`AlnawaaERP Official is running at http://${displayHost}:${PORT}`);
-  console.log("Admin login: admin@alnawaaerp.com / admin123");
+startServer().catch((error) => {
+  console.error("Failed to start AlnawaaERP Official.", error);
+  process.exitCode = 1;
 });
+
+async function startServer() {
+  db = await loadDatabase();
+  server.listen(PORT, HOST, () => {
+    const displayHost = HOST === "0.0.0.0" ? "localhost" : HOST;
+    console.log(`AlnawaaERP Official is running at http://${displayHost}:${PORT}`);
+    console.log(`Storage: ${activeStorage.kind}`);
+    console.log("Admin login: admin@alnawaaerp.com / admin123");
+  });
+}
 
 async function handleRequest(request, response) {
   const url = new URL(request.url, `http://${request.headers.host || "localhost"}`);
@@ -167,7 +181,7 @@ async function handleApi(request, response, url) {
   if (url.pathname === "/api/me/account" && request.method === "PATCH") {
     const body = await readJsonBody(request);
     const updatedUser = updateOwnAccount(currentUser, body);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 200, { user: sanitizeUser(updatedUser) });
     return;
   }
@@ -196,7 +210,7 @@ async function handleApi(request, response, url) {
     const restored = importedDatabase(body.backup || body, db, currentUser);
     db = restored;
     addAudit(currentUser, "backup:import", "JSON backup restored");
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 200, sanitizeDatabase(db, currentUser));
     return;
   }
@@ -205,7 +219,7 @@ async function handleApi(request, response, url) {
     requirePermission(currentUser, "all");
     requireFeature(currentUser, "settings");
     db = initialDatabase();
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 200, sanitizeDatabase(db, currentUser));
     return;
   }
@@ -217,7 +231,7 @@ async function handleApi(request, response, url) {
     const medicine = normalizeMedicine(body);
     db.medicines.push(medicine);
     addAudit(currentUser, "medicine:create", medicine.name);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 201, { medicine });
     return;
   }
@@ -231,7 +245,7 @@ async function handleApi(request, response, url) {
     const body = await readJsonBody(request);
     Object.assign(existing, normalizeMedicine(body, existing.id, existing.createdAt));
     addAudit(currentUser, "medicine:update", existing.name);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 200, { medicine: existing });
     return;
   }
@@ -240,7 +254,7 @@ async function handleApi(request, response, url) {
     requirePermission(currentUser, "inventory");
     requireFeature(currentUser, "inventory");
     const medicine = deleteMedicine(decodeURIComponent(medicineMatch[1]), currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 200, { medicine });
     return;
   }
@@ -252,7 +266,7 @@ async function handleApi(request, response, url) {
     const supplier = normalizePartner(body, "supplier");
     db.suppliers.push(supplier);
     addAudit(currentUser, "supplier:create", supplier.name);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 201, { supplier });
     return;
   }
@@ -262,7 +276,7 @@ async function handleApi(request, response, url) {
     requirePermission(currentUser, "partners");
     requireFeature(currentUser, "suppliers");
     const supplier = deleteSupplier(decodeURIComponent(supplierMatch[1]), currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 200, { supplier });
     return;
   }
@@ -274,7 +288,7 @@ async function handleApi(request, response, url) {
     const customer = normalizePartner(body, "customer");
     db.customers.push(customer);
     addAudit(currentUser, "customer:create", customer.name);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 201, { customer });
     return;
   }
@@ -284,7 +298,7 @@ async function handleApi(request, response, url) {
     requirePermission(currentUser, "partners");
     requireFeature(currentUser, "customers");
     const customer = deleteCustomer(decodeURIComponent(customerMatch[1]), currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 200, { customer });
     return;
   }
@@ -309,7 +323,7 @@ async function handleApi(request, response, url) {
     });
     db.users.push(user);
     addAudit(currentUser, "user:create", user.email);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 201, { user: sanitizeUser(user) });
     return;
   }
@@ -337,7 +351,7 @@ async function handleApi(request, response, url) {
       if (session.userId === targetUser.id) sessions.delete(token);
     }
     addAudit(currentUser, "user:delete", targetUser.email);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 200, { user: sanitizeUser(targetUser) });
     return;
   }
@@ -347,7 +361,7 @@ async function handleApi(request, response, url) {
     requireFeature(currentUser, "purchases");
     const body = await readJsonBody(request);
     const purchase = createPurchase(body, currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 201, { purchase });
     return;
   }
@@ -357,7 +371,7 @@ async function handleApi(request, response, url) {
     requirePermission(currentUser, "purchases");
     requireFeature(currentUser, "purchases");
     const purchase = deletePurchase(decodeURIComponent(purchaseMatch[1]), currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 200, { purchase });
     return;
   }
@@ -368,7 +382,7 @@ async function handleApi(request, response, url) {
     requireAnyFeature(currentUser, ["purchases", "accounting"]);
     const body = await readJsonBody(request);
     const payment = createSupplierPayment(decodeURIComponent(purchasePaymentMatch[1]), body, currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 201, { payment });
     return;
   }
@@ -378,7 +392,7 @@ async function handleApi(request, response, url) {
     requirePermission(currentUser, "manageAccounting");
     requireAnyFeature(currentUser, ["purchases", "accounting"]);
     const payment = deleteSupplierPayment(decodeURIComponent(supplierPaymentMatch[1]), currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 200, { payment });
     return;
   }
@@ -388,7 +402,7 @@ async function handleApi(request, response, url) {
     requireFeature(currentUser, "sales");
     const body = await readJsonBody(request);
     const sale = createSale(body, currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 201, { sale });
     return;
   }
@@ -399,7 +413,7 @@ async function handleApi(request, response, url) {
     requireAnyFeature(currentUser, ["sales", "invoices"]);
     const body = await readJsonBody(request);
     const sale = updateSale(decodeURIComponent(saleMatch[1]), body, currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 200, { sale });
     return;
   }
@@ -408,7 +422,7 @@ async function handleApi(request, response, url) {
     requirePermission(currentUser, "sales");
     requireAnyFeature(currentUser, ["sales", "invoices"]);
     const sale = deleteSale(decodeURIComponent(saleMatch[1]), currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 200, { sale });
     return;
   }
@@ -419,7 +433,7 @@ async function handleApi(request, response, url) {
     requireFeature(currentUser, "invoices");
     const body = await readJsonBody(request);
     const payment = createCustomerPayment(decodeURIComponent(paymentMatch[1]), body, currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 201, { payment });
     return;
   }
@@ -429,7 +443,7 @@ async function handleApi(request, response, url) {
     requirePermission(currentUser, "createPaymentReceipts");
     requireFeature(currentUser, "invoices");
     const payment = deleteCustomerPayment(decodeURIComponent(customerPaymentMatch[1]), currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 200, { payment });
     return;
   }
@@ -440,7 +454,7 @@ async function handleApi(request, response, url) {
     requireFeature(currentUser, "invoices");
     const body = await readJsonBody(request);
     const receipt = createDeliveryReceipt(decodeURIComponent(deliveryMatch[1]), body, currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 201, { receipt });
     return;
   }
@@ -450,7 +464,7 @@ async function handleApi(request, response, url) {
     requirePermission(currentUser, "sales");
     requireFeature(currentUser, "invoices");
     const receipt = deleteDeliveryReceipt(decodeURIComponent(deliveryReceiptMatch[1]), currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 200, { receipt });
     return;
   }
@@ -473,7 +487,7 @@ async function handleApi(request, response, url) {
       recalculateSalePaymentStatus(sale);
     }
     addAudit(currentUser, "payment:update", `${sale.invoiceNumber} -> ${sale.paymentStatus}`);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 200, { sale });
     return;
   }
@@ -483,7 +497,7 @@ async function handleApi(request, response, url) {
     requireFeature(currentUser, "expenses");
     const body = await readJsonBody(request);
     const expense = createExpense(body, currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 201, { expense });
     return;
   }
@@ -493,7 +507,7 @@ async function handleApi(request, response, url) {
     requirePermission(currentUser, "manageExpenses");
     requireFeature(currentUser, "expenses");
     const expense = deleteExpense(decodeURIComponent(expenseMatch[1]), currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 200, { expense });
     return;
   }
@@ -503,7 +517,7 @@ async function handleApi(request, response, url) {
     requireFeature(currentUser, "payroll");
     const body = await readJsonBody(request);
     const salary = createSalaryPayment(body, currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 201, { salary });
     return;
   }
@@ -513,7 +527,7 @@ async function handleApi(request, response, url) {
     requirePermission(currentUser, "manageExpenses");
     requireFeature(currentUser, "payroll");
     const salary = deleteSalaryPayment(decodeURIComponent(salaryMatch[1]), currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 200, { salary });
     return;
   }
@@ -523,7 +537,7 @@ async function handleApi(request, response, url) {
     requireFeature(currentUser, "banking");
     const body = await readJsonBody(request);
     const withdrawal = createWithdrawal(body, currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 201, { withdrawal });
     return;
   }
@@ -533,7 +547,7 @@ async function handleApi(request, response, url) {
     requirePermission(currentUser, "manageAccounting");
     requireFeature(currentUser, "banking");
     const withdrawal = deleteWithdrawal(decodeURIComponent(withdrawalMatch[1]), currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 200, { withdrawal });
     return;
   }
@@ -543,7 +557,7 @@ async function handleApi(request, response, url) {
     requireFeature(currentUser, "banking");
     const body = await readJsonBody(request);
     const account = createBankAccount(body, currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 201, { account });
     return;
   }
@@ -553,7 +567,7 @@ async function handleApi(request, response, url) {
     requirePermission(currentUser, "manageBankAccounts");
     requireFeature(currentUser, "banking");
     const account = deleteBankAccount(decodeURIComponent(bankAccountMatch[1]), currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 200, { account });
     return;
   }
@@ -563,7 +577,7 @@ async function handleApi(request, response, url) {
     requireFeature(currentUser, "banking");
     const body = await readJsonBody(request);
     const transfer = createInternalTransfer(body, currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 201, { transfer });
     return;
   }
@@ -573,7 +587,7 @@ async function handleApi(request, response, url) {
     requirePermission(currentUser, "manageBankAccounts");
     requireFeature(currentUser, "banking");
     const transfer = deleteInternalTransfer(decodeURIComponent(internalTransferMatch[1]), currentUser);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 200, { transfer });
     return;
   }
@@ -587,7 +601,7 @@ async function handleApi(request, response, url) {
     const body = await readJsonBody(request);
     db.modules[key] = Boolean(body.enabled);
     addAudit(currentUser, "module:update", `${key} ${db.modules[key] ? "on" : "off"}`);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 200, { modules: db.modules });
     return;
   }
@@ -602,7 +616,7 @@ async function handleApi(request, response, url) {
     const hiddenFeatures = Array.isArray(body.hiddenFeatures) ? body.hiddenFeatures : [];
     db.featureVisibility[role] = [...new Set(hiddenFeatures.filter((feature) => featureKeys.includes(feature) && feature !== "dashboard"))];
     addAudit(currentUser, "feature-visibility:update", `${role}: ${db.featureVisibility[role].join(", ") || "all default"}`);
-    saveDatabase(db);
+    await saveDatabase(db);
     sendJson(response, 200, {
       featureVisibility: db.featureVisibility,
       roleFeatureDefaults: roleFeatureDefaults(),
@@ -633,11 +647,39 @@ function serveStatic(requestPath, response) {
   response.end(fs.readFileSync(filePath));
 }
 
-function loadDatabase() {
+async function loadDatabase() {
+  const jsonDb = loadJsonDatabase();
+  if (!process.env.DATABASE_URL) {
+    activeStorage = { kind: "json" };
+    console.log("DATABASE_URL is not set. Using JSON storage.");
+    return jsonDb;
+  }
+
+  try {
+    const prisma = getPrisma();
+    const postgresStorage = createPostgresStore(prisma);
+    if (!(await postgresStorage.isReady())) {
+      activeStorage = { kind: "json" };
+      console.log("PostgreSQL import has not been validated. Using JSON storage.");
+      return jsonDb;
+    }
+
+    const postgresDb = await postgresStorage.loadDatabase();
+    activeStorage = postgresStorage;
+    console.log("PostgreSQL import marker is valid. Using PostgreSQL storage.");
+    return postgresDb;
+  } catch (error) {
+    activeStorage = { kind: "json" };
+    console.error("PostgreSQL storage is unavailable. Falling back to JSON storage.", error);
+    return jsonDb;
+  }
+}
+
+function loadJsonDatabase() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
   if (!fs.existsSync(DB_PATH)) {
     const fresh = initialDatabase();
-    saveDatabase(fresh);
+    saveJsonDatabase(fresh);
     return fresh;
   }
 
@@ -650,7 +692,17 @@ function loadDatabase() {
   }
 }
 
-function saveDatabase(nextDb) {
+async function saveDatabase(nextDb) {
+  migrateDatabase(nextDb);
+  updateAccountBalances(nextDb);
+  if (activeStorage.kind === "postgres") {
+    await activeStorage.saveDatabase(nextDb);
+    return;
+  }
+  saveJsonDatabase(nextDb);
+}
+
+function saveJsonDatabase(nextDb) {
   migrateDatabase(nextDb);
   updateAccountBalances(nextDb);
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
